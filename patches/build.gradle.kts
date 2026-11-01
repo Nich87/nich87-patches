@@ -20,12 +20,16 @@ dependencies {
     compileOnly(libs.gson)
     patchListGeneratorClasspath(libs.gson)
     testImplementation(libs.junit)
+    testImplementation(libs.json)
 }
 
 sourceSets["test"].java.srcDir(project(":extensions:extension").file("src/test/java"))
 tasks.named<JavaCompile>("compileTestJava") {
     options.release.set(11)
     source(project(":extensions:extension").file("src/main/java/app/voidhack/extension/applemusic/GlassSpring.java"))
+    source(project(":extensions:extension").fileTree("src/main/java/app/voidhack/extension/applemusic/library") {
+        include("LibraryBackup.java", "LibraryImportPlan.java", "LibraryFailure.java")
+    })
 }
 
 tasks {
