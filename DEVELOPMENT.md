@@ -74,10 +74,10 @@ Load the local `.mpp` before testing it on a
 target APK. Do not run `generatePatchesList` merely to validate loading:
 that task replaces the release-managed `patches-list.json`.
 
-The template's `Example Patch` still uses a fictional app and fingerprints.
-The first real patch, `Liquid Glass bottom bar`, targets Apple Music
-`com.apple.android.music` 7.0.0 (1614). Its tested input is a merged APK from
-the installed arm64 split set; direct APKM/XAPK support is not declared.
+The `Liquid Glass bottom bar` and `Library import, export and downloads`
+patches target Apple Music `com.apple.android.music` 7.0.0 (1614).
+Their tested input is a merged APK from an arm64 split set; direct APKM/XAPK
+support is not declared. The patches can be selected independently.
 Android 13+ provides live refraction. Older versions retain the native blur;
 that fallback has not been verified on a device.
 

@@ -13,8 +13,7 @@ repository; it does not grant permission to commit, push or publish.
 
 Inspect the branch and dirty work before changing files. Patch development
 belongs on `dev`. Confirm the target app, exact version, original APK type
-and requested behavior before implementing a real app patch. The checked-in
-example is fictional, not an existing supported app.
+and requested behavior before implementing a patch.
 
 Read the existing patch and the pinned Patcher API before copying API usage
 from another project or a newer upstream revision.
@@ -41,8 +40,8 @@ is insufficient for Android loading.
 Keep package paths, declarations, imports and smali descriptors in sync.
 Use the user-selected base namespace `app.voidhack`, with
 `app.voidhack.patches` for patches and `app.voidhack.extension` for extensions.
-The extension class `app.voidhack.extension.ExamplePatch` is referenced
-as `Lapp/voidhack/extension/ExamplePatch;` in smali.
+The extension class `app.voidhack.extension.applemusic.LiquidGlass` is referenced
+as `Lapp/voidhack/extension/applemusic/LiquidGlass;` in smali.
 
 Resolve fingerprints against the real target APK. A fingerprint matching a
 different method is a failure even when it compiles. Declare exact versions
@@ -52,8 +51,8 @@ future versions as unverified unless there is evidence for that declaration.
 Build and load the `.mpp` with a compatible official Morphe Desktop release.
 For behavior changes, apply it to the original target APK and verify the
 result through the appropriate app/device surface. Report build, loading,
-patching, installation and runtime evidence separately. Do not claim a real
-app test from the fictional example or from successful compilation.
+patching, installation and runtime evidence separately. Successful compilation
+alone does not prove target app behavior.
 
 Do not use `generatePatchesList` as a loading check in the working tree;
 it rewrites the release-managed `patches-list.json`.

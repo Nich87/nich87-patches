@@ -3,12 +3,12 @@
 Custom patches by Nich87 for use with [Morphe](https://morphe.software).
 This is an independent project based on the [Morphe patches template](https://github.com/MorpheApp/morphe-patches-template).
 
-The repository currently contains the template's development example. It does
-not yet provide patches for a real app.
+Apple Music patches provide a Liquid Glass bottom bar and library import,
+export and downloads. Each patch can be selected independently.
 
 ## Using the patches
 
-After the first release, add this source in Morphe Manager:
+Add this source in Morphe Manager:
 <https://github.com/Nich87/nich87-patches>.
 
 <a href="https://morphe.software/add-source?github=Nich87/nich87-patches">

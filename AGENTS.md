@@ -44,8 +44,6 @@ environment setup and authoritative upstream links.
 
 ## Patch correctness
 
-- The example targets fictional `com.example.app`; it is development
-  scaffolding, not support for a real application.
 - Update source paths, package declarations, imports, extension namespace
   and smali class descriptors together when renaming.
 - A fingerprint must identify the intended method in the actual target APK.
