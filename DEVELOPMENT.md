@@ -74,10 +74,39 @@ Load the local `.mpp` before testing it on a
 target APK. Do not run `generatePatchesList` merely to validate loading:
 that task replaces the release-managed `patches-list.json`.
 
-The template's `Example Patch` uses a fictional app and fingerprints. Decide
-the real app, version, APK file type and intended behavior before replacing
-this example. A successful build or patch listing is not an APK or device test.
-Keep all test APKs and local validation evidence out of Git.
+The template's `Example Patch` still uses a fictional app and fingerprints.
+The first real patch, `Liquid Glass bottom bar`, targets Apple Music
+`com.apple.android.music` 7.0.0 (1614). Its tested input is a merged APK from
+the installed arm64 split set; direct APKM/XAPK support is not declared.
+Android 13+ provides live refraction. Older versions retain the native blur;
+that fallback has not been verified on a device.
+
+Build the bundle and run the spring tests with:
+
+```sh
+./scripts/gradle.sh :patches:test buildAndroid
+```
+
+The spring is Android-independent. The JVM patch module runs its tests against
+the actual extension source because the extension plugin disables Android unit
+test variants. Tests cover settling, collision rebound, retargeting momentum
+and agreement across refresh rates.
+
+Apply only the real patch to a local APK with Morphe Desktop:
+
+```sh
+java -jar .local/tools/morphe-desktop-1.20.0-all.jar patch \
+  --patches patches/build/libs/patches-1.0.0.mpp --exclusive \
+  --enable 'Liquid Glass bottom bar' --validate --bytecode-mode=FULL \
+  --out .local/applemusic/applemusic-7.0.0-liquid.apk \
+  .local/applemusic/applemusic-7.0.0-merged.apk
+```
+
+A successful build or patch listing is not an APK or device test. Local
+validation uses a separately signed QA copy with a different package, preserving
+the original installation and data. Package renaming is not part of the patch.
+The QA copy is signed out, so account-dependent player flows need separate
+verification. Keep all test APKs, signing keys and local evidence out of Git.
 
 ## Release workflow
 

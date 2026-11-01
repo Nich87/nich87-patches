@@ -19,6 +19,13 @@ val patchListGeneratorClasspath = configurations.create("patchListGeneratorClass
 dependencies {
     compileOnly(libs.gson)
     patchListGeneratorClasspath(libs.gson)
+    testImplementation(libs.junit)
+}
+
+sourceSets["test"].java.srcDir(project(":extensions:extension").file("src/test/java"))
+tasks.named<JavaCompile>("compileTestJava") {
+    options.release.set(11)
+    source(project(":extensions:extension").file("src/main/java/app/voidhack/extension/applemusic/GlassSpring.java"))
 }
 
 tasks {
