@@ -1,14 +1,13 @@
-group = "app.template"
+group = "app.voidhack"
 
 patches {
-    // TODO: Update this section with your project details.
     about {
-        name = "UserXYZ Patches"
-        description = "Patches for apps I like"
-        source = "git@github.com:UserXYZ/morphe-patches.git"
-        author = "Awesome dev"
-        contact = "na"
-        website = "na"
+        name = "Nich87 Patches"
+        description = "Custom patches by Nich87 for use with Morphe."
+        source = "https://github.com/Nich87/nich87-patches"
+        author = "Nich87"
+        contact = "https://github.com/Nich87/nich87-patches/issues"
+        website = "https://github.com/Nich87/nich87-patches"
         license = "GPLv3"
     }
 }
@@ -20,6 +19,17 @@ val patchListGeneratorClasspath = configurations.create("patchListGeneratorClass
 dependencies {
     compileOnly(libs.gson)
     patchListGeneratorClasspath(libs.gson)
+    testImplementation(libs.junit)
+    testImplementation(libs.json)
+}
+
+sourceSets["test"].java.srcDir(project(":extensions:extension").file("src/test/java"))
+tasks.named<JavaCompile>("compileTestJava") {
+    options.release.set(11)
+    source(project(":extensions:extension").file("src/main/java/app/voidhack/extension/applemusic/GlassSpring.java"))
+    source(project(":extensions:extension").fileTree("src/main/java/app/voidhack/extension/applemusic/library") {
+        include("LibraryBackup.java", "LibraryImportPlan.java", "LibraryFailure.java")
+    })
 }
 
 tasks {
