@@ -20,8 +20,41 @@ Enable pre-releases for development builds from `dev`.
 ## Patches
 
 <!-- PATCHES_START EXPANDED -->
+> **[v1.0.0-dev.1](https://github.com/Nich87/nich87-patches/releases/tag/v1.0.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;3 patches total
+<details open>
+<summary>📦 XYZ app&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
+<br>
 
-The patch list will appear here after the first release.
+**Package name:** `com.example.app`
+
+**🎯 Supported versions:**
+
+| 2.0.0 | 1.0.2 |
+| :---: | :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Example Patch](#example-patch) | Example patch to start with. |  |
+
+</details>
+
+<details open>
+<summary>📦 Apple Music&nbsp;&nbsp;•&nbsp;&nbsp;2 patches</summary>
+<br>
+
+**Package name:** `com.apple.android.music`
+
+**🎯 Supported versions:**
+
+| 7.0.0 |
+| :---: |
+
+| 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
+|----------|----------------|-----------|
+| [Library import, export and downloads](#library-import-export-and-downloads) | Adds JSON library and playlist backups, additive import, and a native download action for the entire library. |  |
+| [Liquid Glass bottom bar](#liquid-glass-bottom-bar) | Adds a live refractive glass background and animated selection lens to Apple Music's bottom tabs. Refraction requires Android 13 or newer. |  |
+
+</details>
 
 <!-- PATCHES_END -->
 
