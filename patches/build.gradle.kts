@@ -1,14 +1,13 @@
-group = "app.template"
+group = "app.voidhack"
 
 patches {
-    // TODO: Update this section with your project details.
     about {
-        name = "UserXYZ Patches"
-        description = "Patches for apps I like"
-        source = "git@github.com:UserXYZ/morphe-patches.git"
-        author = "Awesome dev"
-        contact = "na"
-        website = "na"
+        name = "Nich87 Patches"
+        description = "Custom patches by Nich87 for use with Morphe."
+        source = "https://github.com/Nich87/nich87-patches"
+        author = "Nich87"
+        contact = "https://github.com/Nich87/nich87-patches/issues"
+        website = "https://github.com/Nich87/nich87-patches"
         license = "GPLv3"
     }
 }
