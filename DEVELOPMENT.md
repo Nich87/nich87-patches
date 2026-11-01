@@ -11,8 +11,7 @@
 - Node.js and npm are needed for release automation, not a local `.mpp`
   build. GitHub Actions installs them in the existing workflow.
 
-Set `ANDROID_HOME` to your SDK installation. For example, this workstation
-uses `/opt/android-sdk`. Alternatively, set `sdk.dir` in ignored
+Set `ANDROID_HOME` to your SDK installation, or set `sdk.dir` in ignored
 `local.properties`. Do not commit a machine-specific SDK path.
 
 ## Authentication and building
@@ -34,12 +33,11 @@ take precedence. The token is not written to a project file or passed as a
 command-line property.
 
 The default Gradle cache is `${TMPDIR:-/tmp}/nich87-patches-gradle-${UID}`.
-It avoids the workstation's nearly full home filesystem and old credentials
-in `~/.gradle/gradle.properties`. Temporary caches may disappear after a reboot;
-Gradle will download dependencies again. Set `GRADLE_USER_HOME` to a private,
-persistent directory on a filesystem with enough space if preferred. Any
-`gpr.user` or `gpr.key` properties there must be current because the upstream
-plugin reads those properties before environment credentials.
+Temporary caches may disappear after a reboot; Gradle will download
+dependencies again. Set `GRADLE_USER_HOME` to a private, persistent directory
+if preferred. Any `gpr.user` or `gpr.key` properties there must be current
+because the upstream plugin reads those properties before environment
+credentials.
 
 The underlying upstream command is still `./gradlew buildAndroid`. It works
 when the Gradle user home has valid `gpr.user` / `gpr.key` properties or when
@@ -54,7 +52,7 @@ does not prove the Android bundle was produced.
 
 Download the official Morphe Desktop release into ignored `.local/tools/`
 or use an existing installation. Check its `--help` for the current listing
-and patching commands. For this setup, the reference release is `v1.20.0`:
+and patching commands. Desktop `v1.20.0` is compatible with the pinned Patcher:
 
 ```sh
 mkdir -p .local/tools
@@ -66,9 +64,8 @@ java -jar .local/tools/morphe-desktop-1.20.0-all.jar list-patches \
   --with-packages --with-versions
 ```
 
-The example filename above is the initial local build version, not a published
-release. Select the actual `.mpp` filename after subsequent releases.
-Desktop `v1.20.0` and this template both use Patcher `2.1.0`. Use a compatible
+Select the actual `.mpp` filename for the version being built.
+Desktop `v1.20.0` and this project both use Patcher `2.1.0`. Use a compatible
 Desktop/Patcher version when upgrading `gradle/libs.versions.toml`.
 Load the local `.mpp` before testing it on a
 target APK. Do not run `generatePatchesList` merely to validate loading:
@@ -105,8 +102,8 @@ java -jar .local/tools/morphe-desktop-1.20.0-all.jar patch \
 A successful build or patch listing is not an APK or device test. Local
 validation uses a separately signed QA copy with a different package, preserving
 the original installation and data. Package renaming is not part of the patch.
-The QA copy is signed out, so account-dependent player flows need separate
-verification. Keep all test APKs, signing keys and local evidence out of Git.
+Sign in to the QA copy when verifying account-dependent flows.
+Keep all test APKs, signing keys and local evidence out of Git.
 
 ## Release workflow
 

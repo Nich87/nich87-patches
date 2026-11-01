@@ -24,7 +24,7 @@ Use JDK 21 and Android SDK Platform 36. Run
 `./scripts/gradle.sh buildAndroid` from the repository; extra Gradle arguments
 are forwarded. The launcher uses a separate temporary `GRADLE_USER_HOME`
 and reads credentials from GitHub CLI unless explicitly supplied in the
-environment. It avoids stale workstation-wide Gradle credentials.
+environment. The separate Gradle cache isolates credentials between projects.
 
 If Packages returns 401/403, check the credential source and `read:packages`
 scope without printing a token. Use GitHub's browser authentication flow;
