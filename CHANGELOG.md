@@ -1,3 +1,9 @@
+## [1.1.0-dev.1](https://github.com/Nich87/nich87-patches/compare/v1.0.0...v1.1.0-dev.1) (2026-11-08)
+
+### ✨ New Features
+
+* Add Liquid Glass mini-player and touch feedback ([28cc544](https://github.com/Nich87/nich87-patches/commit/28cc5442888931cc3e5952e3eb66a1b6840392a1))
+
 ## 1.0.0 (2026-11-01)
 
 ### ✨ New Features
