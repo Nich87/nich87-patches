@@ -78,6 +78,20 @@ patch can be selected independently.
 Android 13+ provides live refraction. Older versions retain the native blur;
 that fallback has not been verified on a device.
 
+### Liquid Glass rendering
+
+The bottom tabs and mini-player use the active, untinted Regular material
+from iOS 26 beta 2 (`23A5276f`) as their reference. `GlassPyramid` crops the
+live Apple Music backdrop, prepares a quarter-resolution base, and repeatedly
+halves it with the recovered 13-sample filter. `GlassShaders` evaluates a
+continuous-corner signed distance field and blends adjacent blur levels at
+the inner and outer refraction coordinates. The face, ambient bleed and
+shadow use the recovered size and color equations.
+
+The renderer uses Android's RenderNode sampling and compositing, with
+Android-specific highlight settings. Fidelity depends on the Android
+backdrop boundaries and the material selected for the iOS reference frame.
+
 ### Library metadata repair
 
 `Repair Japanese library metadata` is a separate Apple Music patch.

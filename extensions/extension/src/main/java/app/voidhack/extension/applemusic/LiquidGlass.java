@@ -65,7 +65,7 @@ public final class LiquidGlass {
     }
 
     interface Backdrop {
-        void draw(Canvas canvas, RectF bounds, boolean dark, float parallax);
+        boolean draw(Canvas canvas, RectF bounds, boolean dark, float parallax, float engagement, int opacity);
         void drawLens(Canvas canvas, RectF bounds, boolean dark, float press, ViewGroup menu);
         void release();
     }

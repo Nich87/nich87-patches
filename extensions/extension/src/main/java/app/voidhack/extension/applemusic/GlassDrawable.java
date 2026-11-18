@@ -7,7 +7,6 @@ import android.graphics.ColorFilter;
 import android.graphics.LinearGradient;
 import android.graphics.Outline;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.RectF;
 import android.graphics.Shader;
@@ -24,7 +23,6 @@ final class GlassDrawable extends Drawable {
     final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     final RectF capsule = new RectF();
     final RectF selection = new RectF();
-    final Path clip = new Path();
     float center;
     float selectionWidth;
     float press;
@@ -44,31 +42,31 @@ final class GlassDrawable extends Drawable {
     @Override public void draw(Canvas canvas) {
         capsule.set(getBounds());
         if (capsule.isEmpty()) return;
-        float radius = capsule.height() / 2f;
-        clip.rewind();
-        clip.addRoundRect(capsule, radius, radius, Path.Direction.CW);
-        int save = canvas.save();
-        canvas.clipPath(clip);
-        if (backdrop != null) backdrop.draw(canvas, capsule, dark, parallax);
+        float radius = Math.min(capsule.width(), capsule.height()) / 2f;
+        boolean drawn = backdrop != null && backdrop.draw(canvas, capsule, dark, parallax, engagement, opacity);
         paint.setStyle(Paint.Style.FILL);
-        paint.setShader(null);
-        paint.setColor(dark ? SURFACE_DARK : SURFACE_LIGHT);
-        paint.setAlpha(MATERIAL_ALPHA * opacity / 255);
-        canvas.drawRoundRect(capsule, radius, radius, paint);
-        if (engagement > 0f) {
-            paint.setColor(dark ? Color.WHITE : Color.BLACK);
-            paint.setAlpha((int) (opacity * (dark ? 0.07f : 0.035f) * engagement));
+        if (!drawn) {
+            paint.setColor(dark ? SURFACE_DARK : SURFACE_LIGHT);
+            paint.setAlpha(MATERIAL_ALPHA * opacity / 255);
             canvas.drawRoundRect(capsule, radius, radius, paint);
+            if (engagement > 0f) {
+                paint.setColor(dark ? Color.WHITE : Color.BLACK);
+                paint.setAlpha((int) (opacity * (dark ? 0.07f : 0.035f) * engagement));
+                canvas.drawRoundRect(capsule, radius, radius, paint);
+            }
         }
-        if (selectionWidth > 0f) {
-            float inset = INSET_DP * density;
+        float inset = INSET_DP * density;
+        if (selectionWidth > 0f && capsule.width() > 2f * inset && capsule.height() > 2f * inset) {
             float width = Math.min(capsule.width() - inset * 2, selectionWidth);
             float left = Math.max(inset, Math.min(capsule.width() - inset - width, center - width / 2f));
-            selection.set(left, inset, left + width, capsule.height() - inset);
+            selection.set(capsule.left + left, capsule.top + inset, capsule.left + left + width,
+                    capsule.bottom - inset);
             paint.setColor(dark ? Color.WHITE : Color.BLACK);
-            paint.setAlpha((int) (opacity * 0.10f * (backdrop == null ? 1f : 1f - press)));
+            paint.setAlpha((int) (opacity * 0.10f * (drawn ? 1f - press : 1f)));
             canvas.drawRoundRect(selection, selection.height() / 2f, selection.height() / 2f, paint);
         }
+        if (drawn) return;
+
         selection.set(capsule);
         selection.inset(density / 2f, density / 2f);
         paint.setStyle(Paint.Style.STROKE);
@@ -79,7 +77,6 @@ final class GlassDrawable extends Drawable {
                 new float[]{0f, 0.55f, 1f}, Shader.TileMode.CLAMP));
         canvas.drawRoundRect(selection, radius, radius, paint);
         paint.setShader(null);
-        canvas.restoreToCount(save);
     }
 
     @Override public void getOutline(Outline outline) {
