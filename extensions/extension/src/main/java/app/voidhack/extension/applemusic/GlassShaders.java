@@ -35,8 +35,7 @@ final class GlassShaders {
 
     // All geometry is in physical pixels. The gradient points out of the shape.
     private static final String SHAPE = """
-            float3 field(float2 p, float2 halfSize, float ovalization) {
-                float radius = min(halfSize.x, halfSize.y);
+            float3 field(float2 p, float2 halfSize, float radius, float ovalization) {
                 const float cornerScale = 1.5286649465560913;
                 float corner = radius * cornerScale;
                 float2 fromSide = abs(p) - halfSize + corner;
@@ -56,6 +55,10 @@ final class GlassShaders {
                     normal = normalize(mix(normal, oval, ovalization));
                 }
                 return float3(dist, normal);
+            }
+
+            float3 capsuleField(float2 p, float2 halfSize, float ovalization) {
+                return field(p, halfSize, min(halfSize.x, halfSize.y), ovalization);
             }
 
             float offset(float amount, float height, float depth) {
@@ -84,6 +87,7 @@ final class GlassShaders {
             uniform float lastLevel;
             uniform float2 captureSize;
             uniform float2 extent;
+            uniform float cornerRadius;
             uniform float2 center;
             uniform float2 light;
             uniform float density;
@@ -130,7 +134,7 @@ final class GlassShaders {
                 float2 p = px - center;
                 if (abs(p.x) > extent.x * 0.5 + 48.0 * density
                         || abs(p.y) > extent.y * 0.5 + 56.0 * density) return half4(0);
-                float3 shape = field(p, extent * 0.5, 0.0);
+                float3 shape = field(p, extent * 0.5, cornerRadius, 0.0);
                 float d = shape.x / density;
                 float2 sampleAt = px - float2(parallax, 0.0);
                 float coverage = clamp(0.5 - shape.x, 0.0, 1.0);
@@ -141,7 +145,7 @@ final class GlassShaders {
                 float shadowAlpha = 0.0;
                 float3 shadowColor = float3(0);
                 if (coverage < 1.0 && (t > 0.0 || dark < 1.0)) {
-                    float shadowD = field(p - float2(0, 8) * density, extent * 0.5, 0.0).x / density;
+                    float shadowD = field(p - float2(0, 8) * density, extent * 0.5, cornerRadius, 0.0).x / density;
                     float s = clamp(0.5 + shadowD / 96.0, 0.0, 1.0) * 4.0 - 2.0;
                     float s2 = s * s;
                     float shadow = clamp(0.5 + s * (((0.002954483 * s2 - 0.034454346) * s2
@@ -196,7 +200,7 @@ final class GlassShaders {
             uniform float lift;
 
             float3 below(float2 p) {
-                float3 shape = field(p - center, extent * 0.5, 0.5);
+                float3 shape = capsuleField(p - center, extent * 0.5, 0.5);
                 float coverage = clamp(0.5 - shape.x, 0.0, 1.0);
                 float depth = -shape.x / density;
                 float amount = offset(9.0, 36.0, depth) * density * lift;
@@ -205,7 +209,7 @@ final class GlassShaders {
             }
 
             half4 main(float2 px) {
-                float3 shape = field(px - center, extent * 0.5, 0.5);
+                float3 shape = capsuleField(px - center, extent * 0.5, 0.5);
                 float coverage = clamp(0.5 - shape.x, 0.0, 1.0);
                 if (coverage == 0.0) return half4(0);
                 float depth = -shape.x / density;
@@ -240,7 +244,7 @@ final class GlassShaders {
             uniform float lift;
 
             half4 main(float2 px) {
-                float3 shape = field(px - center, extent * 0.5, 0.5);
+                float3 shape = capsuleField(px - center, extent * 0.5, 0.5);
                 float coverage = clamp(0.5 - shape.x, 0.0, 1.0);
                 if (coverage == 0.0) return half4(0);
                 float shift = offset(-17.5, 11.2, -shape.x / density) * density;

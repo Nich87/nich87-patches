@@ -23,6 +23,13 @@ public final class LiquidGlass {
         root.post(() -> installWhenReady(root));
     }
 
+    @SuppressWarnings("unused")
+    public static void onPlayerSlide(View sheet, float progress) {
+        if (sheet.getId() != View.NO_ID && sheet.getTag(sheet.getId()) instanceof GlassMiniPlayer miniPlayer) {
+            miniPlayer.onPlayerSlide(progress);
+        }
+    }
+
     private static void installWhenReady(View root) {
         View navigation = find(root, "bottom_nav_view");
         View originalBlur = find(root, "bottom_nav_blur");
@@ -66,7 +73,8 @@ public final class LiquidGlass {
     }
 
     interface Backdrop {
-        boolean draw(Canvas canvas, RectF bounds, boolean dark, float parallax, float engagement, int opacity);
+        boolean draw(Canvas canvas, RectF bounds, float cornerRadius, boolean dark, float parallax,
+                     float engagement, int opacity);
         void drawLens(Canvas canvas, RectF bounds, boolean dark, float press, ViewGroup menu, Paint composite);
         void release();
     }

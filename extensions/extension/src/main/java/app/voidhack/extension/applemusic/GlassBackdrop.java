@@ -29,6 +29,7 @@ final class GlassBackdrop implements LiquidGlass.Backdrop {
     private final GlassPyramid pyramid;
     private float surfaceWidth;
     private float surfaceHeight;
+    private float surfaceCornerRadius;
     private float surfaceParallax;
     private float surfaceEngagement;
     private boolean surfaceDark;
@@ -50,11 +51,11 @@ final class GlassBackdrop implements LiquidGlass.Backdrop {
         density = navigation.getResources().getDisplayMetrics().density;
     }
 
-    @Override public boolean draw(Canvas canvas, RectF bounds, boolean dark, float parallax, float engagement,
-                                  int opacity) {
+    @Override public boolean draw(Canvas canvas, RectF bounds, float cornerRadius, boolean dark,
+                                  float parallax, float engagement, int opacity) {
         if (!canvas.isHardwareAccelerated() || !source.hasDisplayList()) return false;
         int padding = (int) Math.ceil(SAMPLE_PADDING_DP * density);
-        recordBackdrop(bounds, dark, padding, parallax, engagement);
+        recordBackdrop(bounds, cornerRadius, dark, padding, parallax, engagement);
         surface.setAlpha(opacity / 255f);
         drawSurface(canvas, bounds, padding);
         return true;
@@ -67,7 +68,8 @@ final class GlassBackdrop implements LiquidGlass.Backdrop {
         canvas.restoreToCount(save);
     }
 
-    private void recordBackdrop(RectF bounds, boolean dark, int padding, float parallax, float engagement) {
+    private void recordBackdrop(RectF bounds, float cornerRadius, boolean dark, int padding, float parallax,
+                                float engagement) {
         float width = bounds.width();
         float height = bounds.height();
         float size = Math.min(width, height) / density;
@@ -83,16 +85,19 @@ final class GlassBackdrop implements LiquidGlass.Backdrop {
                 padding - bounds.left - navigationLocation[0] + targetLocation[0],
                 padding - bounds.top - navigationLocation[1] + targetLocation[1],
                 dark ? Color.BLACK : Color.WHITE, maxRadius);
-        if (surfaceWidth == width && surfaceHeight == height && surfaceParallax == parallax
+        if (surfaceWidth == width && surfaceHeight == height && surfaceCornerRadius == cornerRadius
+                && surfaceParallax == parallax
                 && surfaceEngagement == engagement && surfaceDark == dark) return;
 
         surfaceWidth = width;
         surfaceHeight = height;
+        surfaceCornerRadius = cornerRadius;
         surfaceParallax = parallax;
         surfaceEngagement = engagement;
         surfaceDark = dark;
         pyramid.setUniforms(surfaceOptics);
         surfaceOptics.setFloatUniform("extent", width, height);
+        surfaceOptics.setFloatUniform("cornerRadius", cornerRadius);
         surfaceOptics.setFloatUniform("center", padding + width / 2f, padding + height / 2f);
         surfaceOptics.setFloatUniform("density", density);
         surfaceOptics.setFloatUniform("dark", dark ? 1f : 0f);

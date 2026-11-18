@@ -8,6 +8,7 @@ import android.graphics.LinearGradient;
 import android.graphics.Outline;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
@@ -31,6 +32,8 @@ final class GlassDrawable extends Drawable {
     float deformation;
     boolean dark;
     private int opacity = 255;
+    private Rect transitionBounds;
+    private float transitionRadius;
 
     GlassDrawable(View navigation, LiquidGlass.Backdrop backdrop) {
         this.backdrop = backdrop;
@@ -40,10 +43,10 @@ final class GlassDrawable extends Drawable {
     }
 
     @Override public void draw(Canvas canvas) {
-        capsule.set(getBounds());
-        if (capsule.isEmpty()) return;
-        float radius = Math.min(capsule.width(), capsule.height()) / 2f;
-        boolean drawn = backdrop != null && backdrop.draw(canvas, capsule, dark, parallax, engagement, opacity);
+        capsule.set(transitionBounds == null ? getBounds() : transitionBounds);
+        if (capsule.isEmpty() || opacity == 0) return;
+        float radius = transitionBounds == null ? Math.min(capsule.width(), capsule.height()) / 2f : transitionRadius;
+        boolean drawn = backdrop != null && backdrop.draw(canvas, capsule, radius, dark, parallax, engagement, opacity);
         paint.setStyle(Paint.Style.FILL);
         if (!drawn) {
             paint.setColor(dark ? SURFACE_DARK : SURFACE_LIGHT);
@@ -82,7 +85,19 @@ final class GlassDrawable extends Drawable {
     @Override public void getOutline(Outline outline) {
         outline.setRoundRect(getBounds(), getBounds().height() / 2f);
     }
-    @Override public void setAlpha(int alpha) { opacity = alpha; invalidateSelf(); }
+    void setTransitionShape(Rect bounds, float radius) {
+        if (transitionBounds == null) transitionBounds = new Rect();
+        if (transitionBounds.equals(bounds) && transitionRadius == radius) return;
+        transitionBounds.set(bounds);
+        transitionRadius = radius;
+        invalidateSelf();
+    }
+
+    @Override public void setAlpha(int alpha) {
+        if (opacity == alpha) return;
+        opacity = alpha;
+        invalidateSelf();
+    }
     @Override public void setColorFilter(ColorFilter filter) { paint.setColorFilter(filter); invalidateSelf(); }
     @Override public int getOpacity() { return PixelFormat.TRANSLUCENT; }
 }

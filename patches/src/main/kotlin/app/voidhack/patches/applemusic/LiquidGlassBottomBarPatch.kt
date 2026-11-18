@@ -14,10 +14,18 @@ private object MusicContentViewCreated : Fingerprint(
     strings = listOf("miniPlayerBlur", "getDecorView(...)"),
 )
 
+private object PlayerSheetSlide : Fingerprint(
+    definingClass = "Lcom/apple/android/music/player/fragment/PlayerMainFragment\$i;",
+    name = "b",
+    parameters = listOf("Landroid/view/View;", "F"),
+    returnType = "V",
+    strings = listOf("View.NO_ID"),
+)
+
 @Suppress("unused")
 val liquidGlassBottomBarPatch = bytecodePatch(
     name = "Liquid Glass bottom bar",
-    description = "Adds live refractive glass to Apple Music's mini-player and bottom tabs, with whole-bar touch feedback, drag parallax and an animated selection lens. Refraction requires Android 13 or newer.",
+    description = "Adds live refractive glass to Apple Music's mini-player and bottom tabs, an animated selection lens, and a glass transition between the mini-player and Now Playing. Refraction requires Android 13 or newer.",
 ) {
     compatibleWith(appleMusicCompatibility)
     extendWith("extensions/extension.mpe")
@@ -26,6 +34,10 @@ val liquidGlassBottomBarPatch = bytecodePatch(
         MusicContentViewCreated.method.addInstruction(
             0,
             "invoke-static/range {p1 .. p1}, $EXTENSION->install(Landroid/view/View;)V",
+        )
+        PlayerSheetSlide.method.addInstruction(
+            0,
+            "invoke-static/range {p1 .. p2}, $EXTENSION->onPlayerSlide(Landroid/view/View;F)V",
         )
     }
 }

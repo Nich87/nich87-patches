@@ -12,6 +12,7 @@ final class GlassMiniPlayer implements View.OnAttachStateChangeListener,
     private final View root;
     private final View target;
     private final View blur;
+    private final ViewGroup sheet;
     private final int contentId;
     private final int[] location = new int[2];
     private int screenX = Integer.MIN_VALUE;
@@ -24,11 +25,15 @@ final class GlassMiniPlayer implements View.OnAttachStateChangeListener,
     private GlassMiniTouch touch;
     private View play;
     private View next;
+    private GlassPlayerTransition transition;
+    private float slideProgress;
 
     GlassMiniPlayer(View root, View target) {
         this.root = root;
         this.target = target;
         blur = LiquidGlass.find(root, "mini_player_blur");
+        View sheetView = LiquidGlass.find(root, "player_sheet_container");
+        sheet = sheetView instanceof ViewGroup ? (ViewGroup) sheetView : null;
         contentId = root.getResources().getIdentifier("mini_player_content", "id", root.getContext().getPackageName());
     }
 
@@ -36,7 +41,12 @@ final class GlassMiniPlayer implements View.OnAttachStateChangeListener,
         if (observer != null) return;
         observer = root.getViewTreeObserver();
         observer.addOnPreDrawListener(this);
+        if (sheet != null) sheet.setTag(sheet.getId(), this);
         onPreDraw();
+    }
+
+    void onPlayerSlide(float progress) {
+        slideProgress = progress;
     }
 
     @Override public void onViewAttachedToWindow(View view) { attach(); }
@@ -44,6 +54,8 @@ final class GlassMiniPlayer implements View.OnAttachStateChangeListener,
     @Override public void onViewDetachedFromWindow(View view) {
         if (observer != null && observer.isAlive()) observer.removeOnPreDrawListener(this);
         observer = null;
+        if (sheet != null && sheet.getTag(sheet.getId()) == this) sheet.setTag(sheet.getId(), null);
+        slideProgress = 0f;
         release();
     }
 
@@ -68,6 +80,10 @@ final class GlassMiniPlayer implements View.OnAttachStateChangeListener,
                 if (next != null) next.setOnTouchListener(touch);
                 View label = LiquidGlass.find(content, "mini_player_title");
                 title = label instanceof TextView ? (TextView) label : null;
+                View player = sheet == null ? null : LiquidGlass.find(sheet, "player_root");
+                if (player instanceof ViewGroup && player.findViewById(contentId) == content) {
+                    transition = new GlassPlayerTransition(sheet, (ViewGroup) player, content, target);
+                }
             }
         }
         if (material != null) {
@@ -77,8 +93,6 @@ final class GlassMiniPlayer implements View.OnAttachStateChangeListener,
                 screenY = location[1];
                 material.invalidateSelf();
             }
-            motion.hover(content.isShown() && (content.isHovered() || (play != null && play.isHovered()) || (next != null && next.isHovered())));
-            if (!content.isShown()) touch.cancel();
             if (title != null) {
                 boolean dark = Color.luminance(title.getCurrentTextColor()) > 0.5f;
                 if (material.dark != dark) {
@@ -87,11 +101,21 @@ final class GlassMiniPlayer implements View.OnAttachStateChangeListener,
                 }
             }
             if (material.backdrop != null && blur != null) blur.setAlpha(0f);
+            boolean wasMoving = transition != null && transition.isRunning();
+            boolean moving = transition != null && transition.update(slideProgress, material);
+            if (moving && !wasMoving) {
+                touch.cancel();
+                motion.stop();
+            } else if (!moving) {
+                motion.hover(content.isShown() && (content.isHovered() || (play != null && play.isHovered()) || (next != null && next.isHovered())));
+                if (!content.isShown()) touch.cancel();
+            }
         }
         return true;
     }
 
     private void release() {
+        if (transition != null) transition.release(material);
         if (touch != null) touch.cancel();
         if (motion != null) motion.stop();
         if (material != null && material.backdrop != null) material.backdrop.release();
@@ -100,6 +124,7 @@ final class GlassMiniPlayer implements View.OnAttachStateChangeListener,
         material = null;
         motion = null;
         touch = null;
+        transition = null;
         play = next = null;
         screenX = screenY = Integer.MIN_VALUE;
     }
