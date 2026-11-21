@@ -15,17 +15,16 @@ import android.view.ViewGroup;
 
 final class GlassBackdrop implements LiquidGlass.Backdrop {
     private static final float SAMPLE_PADDING_DP = 64f;
-    private static final float OPTICAL_DEPTH_DP = 28f;
-    private static final float BEVEL_DP = 25f;
-    private static final float RIM_DISPERSION = 0.12f;
-    private static final float RIM_DEFOCUS_DP = 0.85f;
+    private static final float LENS_PADDING_DP = 24f;
 
     private final RenderNode source;
     private final View target;
     private final View navigation;
     private final RenderNode surface = new RenderNode("Apple Music glass backdrop");
     private final RenderNode indicator = new RenderNode("Apple Music optical lens");
-    private final RuntimeShader optics = new RuntimeShader(LENS_OPTICS);
+    private final RenderNode indicatorContent = new RenderNode("Apple Music lifted tab content");
+    private RuntimeShader lensOptics;
+    private RuntimeShader contentOptics;
     private final RuntimeShader surfaceOptics = new RuntimeShader(GlassShaders.REGULAR);
     private final GlassPyramid pyramid;
     private float surfaceWidth;
@@ -103,12 +102,15 @@ final class GlassBackdrop implements LiquidGlass.Backdrop {
         surface.setRenderEffect(RenderEffect.createRuntimeShaderEffect(surfaceOptics, "atlas"));
     }
 
-    @Override public void drawLens(Canvas canvas, RectF bounds, boolean dark, float press, ViewGroup menu) {
-        if (!canvas.isHardwareAccelerated() || !source.hasDisplayList()) return;
-        int padding = (int) Math.ceil(SAMPLE_PADDING_DP * density);
+    @Override public void drawLens(Canvas canvas, RectF bounds, boolean dark, float press, ViewGroup menu, Paint composite) {
+        if (!canvas.isHardwareAccelerated() || !source.hasDisplayList() || bounds.isEmpty()) return;
+        if (lensOptics == null) {
+            lensOptics = new RuntimeShader(GlassShaders.LENS);
+            contentOptics = new RuntimeShader(GlassShaders.LENS_CONTENT);
+        }
+        int padding = (int) Math.ceil(LENS_PADDING_DP * density);
         int width = (int) Math.ceil(bounds.width()) + padding * 2;
         int height = (int) Math.ceil(bounds.height()) + padding * 2;
-        bar.set(0f, 0f, navigation.getWidth(), navigation.getHeight());
         indicator.setPosition(0, 0, width, height);
         RecordingCanvas recording = indicator.beginRecording();
         recording.drawColor(dark ? Color.BLACK : Color.WHITE);
@@ -117,69 +119,45 @@ final class GlassBackdrop implements LiquidGlass.Backdrop {
         recording.translate(targetLocation[0] - navigationLocation[0], targetLocation[1] - navigationLocation[1]);
         recording.drawRenderNode(source);
         recording.restoreToCount(background);
-        if (surface.hasDisplayList()) drawSurface(recording, bar, padding);
-        tabInk.setColorFilter(dark ? activeDark : activeLight);
-        int tabs = recording.saveLayer(0f, 0f, navigation.getWidth(), navigation.getHeight(), tabInk);
-        recording.translate(menu.getLeft(), menu.getTop());
-        menu.draw(recording);
-        recording.restoreToCount(tabs);
+        bar.set(0f, 0f, navigation.getWidth(), navigation.getHeight());
+        if (surface.hasDisplayList()) {
+            drawSurface(recording, bar, (int) Math.ceil(SAMPLE_PADDING_DP * density));
+        }
         indicator.endRecording();
-        optics.setFloatUniform("extent", bounds.width(), bounds.height());
-        optics.setFloatUniform("margin", padding);
-        optics.setFloatUniform("depthPx", OPTICAL_DEPTH_DP * density * press);
-        optics.setFloatUniform("bevelPx", BEVEL_DP * density);
-        optics.setFloatUniform("zoom", 1f + 0.16f * press);
-        optics.setFloatUniform("dispersion", RIM_DISPERSION * press);
-        optics.setFloatUniform("defocusPx", RIM_DEFOCUS_DP * density * press);
-        indicator.setRenderEffect(RenderEffect.createRuntimeShaderEffect(optics, "scene"));
-        int save = canvas.save();
+
+        indicatorContent.setPosition(0, 0, width, height);
+        RecordingCanvas content = indicatorContent.beginRecording();
+        content.translate(padding - bounds.left, padding - bounds.top);
+        tabInk.setColorFilter(dark ? activeDark : activeLight);
+        int tabs = content.saveLayer(0f, 0f, navigation.getWidth(), navigation.getHeight(), tabInk);
+        content.translate(menu.getLeft(), menu.getTop());
+        menu.draw(content);
+        content.restoreToCount(tabs);
+        indicatorContent.endRecording();
+
+        indicator.setRenderEffect(lensEffect(lensOptics, bounds, press, padding, density));
+        indicatorContent.setRenderEffect(lensEffect(contentOptics, bounds, press, padding, density));
+        int save = canvas.saveLayer(bounds.left - padding, bounds.top - padding,
+                bounds.left - padding + width, bounds.top - padding + height, composite);
         canvas.translate(bounds.left - padding, bounds.top - padding);
         canvas.drawRenderNode(indicator);
+        canvas.drawRenderNode(indicatorContent);
         canvas.restoreToCount(save);
+    }
+
+    private static RenderEffect lensEffect(RuntimeShader shader, RectF bounds, float press,
+                                           int padding, float density) {
+        shader.setFloatUniform("extent", bounds.width(), bounds.height());
+        shader.setFloatUniform("center", padding + bounds.width() / 2f, padding + bounds.height() / 2f);
+        shader.setFloatUniform("density", density);
+        shader.setFloatUniform("lift", press);
+        return RenderEffect.createRuntimeShaderEffect(shader, "scene");
     }
 
     @Override public void release() {
         surface.discardDisplayList();
         pyramid.release();
         indicator.discardDisplayList();
+        indicatorContent.discardDisplayList();
     }
-
-    private static final String LENS_OPTICS =
-            "uniform shader scene;\n"
-            + "uniform float2 extent; uniform float margin; uniform float depthPx;\n"
-            + "uniform float bevelPx; uniform float zoom; uniform float dispersion; uniform float defocusPx;\n"
-            + "float2 rimOffset(float3 normal, float index, float thickness) {\n"
-            + "  float3 ray = refract(float3(0.0, 0.0, -1.0), normal, 1.0 / index);\n"
-            + "  return -ray.xy * depthPx * thickness / max(-ray.z, 0.15);\n"
-            + "}\n"
-            + "half4 rimSample(float2 at, float2 defocus) {\n"
-            + "  return scene.eval(at) * 0.5 + (scene.eval(at - defocus) + scene.eval(at + defocus)) * 0.25;\n"
-            + "}\n"
-            + "half4 main(float2 pixel) {\n"
-            + "  float2 center = extent * 0.5;\n"
-            + "  float2 point = pixel - float2(margin) - center;\n"
-            + "  float radius = center.y;\n"
-            + "  float spine = max(center.x - radius, 0.0);\n"
-            + "  float2 radial = float2(point.x - clamp(point.x, -spine, spine), point.y);\n"
-            + "  float distance = length(radial);\n"
-            + "  float2 direction = radial / max(distance, 0.001);\n"
-            + "  float lateral = abs(direction.x);\n"
-            + "  float bevelWidth = bevelPx * mix(0.72, 1.0, lateral);\n"
-            + "  float bevel = clamp(1.0 - (radius - distance) / bevelWidth, 0.0, 1.0);\n"
-            + "  float angle = bevel * 1.5707963;\n"
-            + "  float3 normal = float3(direction * sin(angle), cos(angle));\n"
-            + "  float edgeThickness = mix(0.80, 0.04, lateral);\n"
-            + "  float rolloff = smoothstep(mix(0.35, 0.15, lateral), mix(1.0, 0.90, lateral), bevel);\n"
-            + "  float thickness = mix(1.0, edgeThickness, rolloff) * mix(1.0, 2.3, lateral);\n"
-            + "  float2 defocus = direction * defocusPx * sqrt(bevel);\n"
-            + "  float rimZoom = zoom + (zoom - 1.0) * 0.875 * bevel;\n"
-            + "  float2 sampleAt = float2(margin) + center + point / rimZoom;\n"
-            + "  half red = rimSample(sampleAt + rimOffset(normal, 1.50 - dispersion, thickness), defocus).r;\n"
-            + "  half green = rimSample(sampleAt + rimOffset(normal, 1.50, thickness), defocus).g;\n"
-            + "  half blue = rimSample(sampleAt + rimOffset(normal, 1.50 + dispersion, thickness), defocus).b;\n"
-            + "  float edge = pow(bevel, 6.0);\n"
-            + "  float light = pow(max(dot(normal, normalize(float3(-0.4, -0.65, 0.6))), 0.0), 18.0);\n"
-            + "  half3 transmitted = half3(red, green, blue) * half(1.0 - 0.16 * edge);\n"
-            + "  return half4(transmitted + half3(light * bevel * 0.025), 1.0);\n"
-            + "}\n";
 }

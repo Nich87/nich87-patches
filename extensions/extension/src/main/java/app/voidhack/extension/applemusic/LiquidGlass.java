@@ -1,6 +1,7 @@
 package app.voidhack.extension.applemusic;
 
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.RenderNode;
 import android.os.Build;
@@ -66,7 +67,7 @@ public final class LiquidGlass {
 
     interface Backdrop {
         boolean draw(Canvas canvas, RectF bounds, boolean dark, float parallax, float engagement, int opacity);
-        void drawLens(Canvas canvas, RectF bounds, boolean dark, float press, ViewGroup menu);
+        void drawLens(Canvas canvas, RectF bounds, boolean dark, float press, ViewGroup menu, Paint composite);
         void release();
     }
 }

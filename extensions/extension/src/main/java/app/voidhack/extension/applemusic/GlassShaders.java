@@ -187,4 +187,66 @@ final class GlassShaders {
                              coverage + shadowAlpha * (1.0 - coverage));
             }
             """;
+
+    static final String LENS = SHAPE + """
+            uniform shader scene;
+            uniform float2 extent;
+            uniform float2 center;
+            uniform float density;
+            uniform float lift;
+
+            float3 below(float2 p) {
+                float3 shape = field(p - center, extent * 0.5, 0.5);
+                float coverage = clamp(0.5 - shape.x, 0.0, 1.0);
+                float depth = -shape.x / density;
+                float amount = offset(9.0, 36.0, depth) * density * lift;
+                return mix(float3(scene.eval(p).rgb),
+                           float3(scene.eval(p + amount * shape.yz).rgb), coverage);
+            }
+
+            half4 main(float2 px) {
+                float3 shape = field(px - center, extent * 0.5, 0.5);
+                float coverage = clamp(0.5 - shape.x, 0.0, 1.0);
+                if (coverage == 0.0) return half4(0);
+                float depth = -shape.x / density;
+                float shift = offset(-18.0, 7.56, depth) * density;
+                float2 at = px + shift * shape.yz;
+
+                // Filter the refracted source along the rim before splitting color channels.
+                float edge = 1.0 - clamp(depth / 7.2, 0.0, 1.0);
+                float3 transmission = below(at);
+                if (edge > 0.0) {
+                    float2 n = shape.yz;
+                    float2 tangent = float2(-n.y, n.x);
+                    float2 spread = density * edge * (tangent + 0.25 * n);
+                    float3 first = below(at + spread);
+                    float3 second = below(at - spread);
+                    float3 filtered = 0.25 * (first + second) + 0.5 * transmission;
+                    transmission = mix(transmission, filtered + 0.10 * (first - second) * float3(1, 0, -1), edge);
+                }
+                float3 face = 0.9 * transmission + 0.1;
+                float specular = 0.24 * rim(shape, 2.0 * density, float2(-0.38, -0.925), 0.05, 0.6)
+                               + 0.06 * rim(shape, 1.5 * density, float2(0.38, 0.925), 0.2, 0.5);
+                face = clamp(face + specular, 0.0, 1.0);
+                return half4(face * coverage, coverage);
+            }
+            """;
+
+    static final String LENS_CONTENT = SHAPE + """
+            uniform shader scene;
+            uniform float2 extent;
+            uniform float2 center;
+            uniform float density;
+            uniform float lift;
+
+            half4 main(float2 px) {
+                float3 shape = field(px - center, extent * 0.5, 0.5);
+                float coverage = clamp(0.5 - shape.x, 0.0, 1.0);
+                if (coverage == 0.0) return half4(0);
+                float shift = offset(-17.5, 11.2, -shape.x / density) * density;
+                half4 warped = scene.eval(px + shift * shape.yz * coverage);
+                half4 ink = mix(scene.eval(px), warped, half(min(4.0 * lift, 1.0)));
+                return ink * half(coverage);
+            }
+            """;
 }
