@@ -1,11 +1,13 @@
 package app.voidhack.extension.applemusic;
 
+import android.app.Activity;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.RenderNode;
 import android.os.Build;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -28,6 +30,11 @@ public final class LiquidGlass {
         if (sheet.getId() != View.NO_ID && sheet.getTag(sheet.getId()) instanceof GlassMiniPlayer miniPlayer) {
             miniPlayer.onPlayerSlide(progress);
         }
+    }
+
+    @SuppressWarnings("unused")
+    public static boolean onPlayerControlTouch(Activity activity, MotionEvent event) {
+        return GlassMiniPlayer.onControlTouch(activity.getWindow(), event);
     }
 
     private static void installWhenReady(View root) {

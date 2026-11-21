@@ -2,9 +2,16 @@ package app.voidhack.patches.applemusic
 
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
+import com.android.tools.smali.dexlib2.AccessFlags
+import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
+import com.android.tools.smali.dexlib2.immutable.ImmutableMethodImplementation
+import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 
 private const val EXTENSION = "Lapp/voidhack/extension/applemusic/LiquidGlass;"
+private const val TOUCH_EVENT = "Landroid/view/MotionEvent;"
 
 private object MusicContentViewCreated : Fingerprint(
     definingClass = "Lcom/apple/android/music/common/fragment/MusicContentFragment;",
@@ -20,6 +27,13 @@ private object PlayerSheetSlide : Fingerprint(
     parameters = listOf("Landroid/view/View;", "F"),
     returnType = "V",
     strings = listOf("View.NO_ID"),
+)
+
+private object MainActivityCreated : Fingerprint(
+    definingClass = "Lcom/apple/android/music/common/MainActivity;",
+    name = "onCreate",
+    parameters = listOf("Landroid/os/Bundle;"),
+    returnType = "V",
 )
 
 @Suppress("unused")
@@ -39,5 +53,33 @@ val liquidGlassBottomBarPatch = bytecodePatch(
             0,
             "invoke-static/range {p1 .. p2}, $EXTENSION->onPlayerSlide(Landroid/view/View;F)V",
         )
+
+        val activity = MainActivityCreated.classDef
+        check(activity.methods.none { it.name == "dispatchTouchEvent" && it.parameterTypes == listOf(TOUCH_EVENT) })
+        val dispatchTouch = MutableMethod(
+            ImmutableMethod(
+                activity.type,
+                "dispatchTouchEvent",
+                listOf(ImmutableMethodParameter(TOUCH_EVENT, emptySet(), null)),
+                "Z",
+                AccessFlags.PUBLIC.value,
+                emptySet(),
+                emptySet(),
+                ImmutableMethodImplementation(3, emptyList(), emptyList(), emptyList()),
+            ),
+        )
+        dispatchTouch.addInstructions(
+            0,
+            """
+                invoke-static {p0, p1}, $EXTENSION->onPlayerControlTouch(Landroid/app/Activity;${TOUCH_EVENT})Z
+                move-result v0
+                if-nez v0, :handled
+                invoke-super {p0, p1}, ${activity.superclass}->dispatchTouchEvent(${TOUCH_EVENT})Z
+                move-result v0
+                :handled
+                return v0
+            """,
+        )
+        activity.methods.add(dispatchTouch)
     }
 }
