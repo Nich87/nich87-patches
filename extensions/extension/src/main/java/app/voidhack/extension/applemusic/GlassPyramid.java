@@ -9,6 +9,7 @@ import android.graphics.RuntimeShader;
 final class GlassPyramid {
     private static final int MAX_LEVELS = 6;
     private static final int BASE_SCALE = 4;
+    private static final int ALIGN = BASE_SCALE << 4;
     private final RenderNode source;
     private final RenderNode capture = new RenderNode("Glass backdrop capture");
     private final RenderNode[] levels = new RenderNode[MAX_LEVELS - 1];
@@ -32,16 +33,16 @@ final class GlassPyramid {
         }
     }
 
-    void record(RenderNode atlas, int captureWidth, int captureHeight, float x, float y, int color,
-                float maxRadius) {
-        int alignedWidth = (captureWidth + BASE_SCALE - 1) / BASE_SCALE * BASE_SCALE;
-        int alignedHeight = (captureHeight + BASE_SCALE - 1) / BASE_SCALE * BASE_SCALE;
+    boolean record(RenderNode atlas, int captureWidth, int captureHeight, float x, float y, int color,
+                   float maxRadius) {
+        int alignedWidth = (captureWidth + ALIGN - 1) / ALIGN * ALIGN;
+        int alignedHeight = (captureHeight + ALIGN - 1) / ALIGN * ALIGN;
         double lod = Math.log(maxRadius < 2f ? 1f + 0.5f * maxRadius : maxRadius) / Math.log(2);
         int needed = Math.min(MAX_LEVELS, (int) Math.ceil(lod) + 1);
         boolean resize = width != alignedWidth || height != alignedHeight || count != needed
                 || !atlas.hasDisplayList();
         if (!resize && sourceX == x && sourceY == y && background == color) {
-            return;
+            return false;
         }
         count = needed;
         width = alignedWidth;
@@ -56,6 +57,7 @@ final class GlassPyramid {
         canvas.drawRenderNode(source);
         capture.endRecording();
         if (resize) recordLevels(atlas);
+        return resize;
     }
 
     private void recordLevels(RenderNode atlas) {

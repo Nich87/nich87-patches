@@ -72,20 +72,19 @@ final class GlassBackdrop implements LiquidGlass.Backdrop {
                                 float engagement) {
         float width = bounds.width();
         float height = bounds.height();
-        float size = Math.min(width, height) / density;
-        float materialProgress = Math.max(0f, Math.min(1f, (size - 48f) / 112f));
-        float maxRadius = (1.5f + 4.5f * materialProgress) * density * 0.4f;
-        if (materialProgress > 0f) {
-            // Either ambient bleed or the backdrop-colored shadow can need a coarser level.
-            maxRadius = Math.max(maxRadius, Math.max(Math.min(0.7f * size, 160f) * 0.2f, 8f) * density);
-        }
+        float sizeDp = Math.min(width, height) / density;
+        float t = Math.max(0f, Math.min(1f, (sizeDp - 48f) / 112f));
+        float faceRadius = (1.5f + 4.5f * t) * density * 0.4f;
+        float bleedRadius = t > 0f ? Math.min(0.7f * sizeDp, 160f) * 0.5f * density * 0.4f : 0f;
+        float shadowRadius = t > 0f ? 8f * density : 0f;
+        float maxRadius = Math.max(faceRadius, Math.max(bleedRadius, shadowRadius));
         target.getLocationOnScreen(targetLocation);
         navigation.getLocationOnScreen(navigationLocation);
-        pyramid.record(surface, (int) Math.ceil(width) + padding * 2, (int) Math.ceil(height) + padding * 2,
+        boolean resized = pyramid.record(surface, (int) Math.ceil(width) + padding * 2, (int) Math.ceil(height) + padding * 2,
                 padding - bounds.left - navigationLocation[0] + targetLocation[0],
                 padding - bounds.top - navigationLocation[1] + targetLocation[1],
                 dark ? Color.BLACK : Color.WHITE, maxRadius);
-        if (surfaceWidth == width && surfaceHeight == height && surfaceCornerRadius == cornerRadius
+        if (!resized && surfaceWidth == width && surfaceHeight == height && surfaceCornerRadius == cornerRadius
                 && surfaceParallax == parallax
                 && surfaceEngagement == engagement && surfaceDark == dark) return;
 
@@ -140,6 +139,7 @@ final class GlassBackdrop implements LiquidGlass.Backdrop {
         content.restoreToCount(tabs);
         indicatorContent.endRecording();
 
+        lensOptics.setFloatUniform("dark", dark ? 1f : 0f);
         indicator.setRenderEffect(lensEffect(lensOptics, bounds, press, padding, density));
         indicatorContent.setRenderEffect(lensEffect(contentOptics, bounds, press, padding, density));
         int save = canvas.saveLayer(bounds.left - padding, bounds.top - padding,

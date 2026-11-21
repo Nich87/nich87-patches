@@ -65,7 +65,8 @@ final class GlassDrawable extends Drawable {
             selection.set(capsule.left + left, capsule.top + inset, capsule.left + left + width,
                     capsule.bottom - inset);
             paint.setColor(dark ? Color.WHITE : Color.BLACK);
-            paint.setAlpha((int) (opacity * 0.10f * (drawn ? 1f - press : 1f)));
+            float selectionAlpha = drawn ? (dark ? 0.075f : 0.045f) * (1f - press) : 0.10f;
+            paint.setAlpha(Math.round(opacity * selectionAlpha));
             canvas.drawRoundRect(selection, selection.height() / 2f, selection.height() / 2f, paint);
         }
         if (drawn) return;
