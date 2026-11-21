@@ -88,10 +88,12 @@ continuous-corner signed distance field and blends adjacent blur levels at
 the inner and outer refraction coordinates. The face, ambient bleed and
 shadow use the recovered size and color equations.
 
-The selected tab uses a separate background refraction and lifted-content
-warp. Its source and geometry come from the existing Android tab views and
-springs. The renderer uses Android's RenderNode sampling and compositing.
-The highlight settings and the lens's chromatic edge are Android adaptations.
+The selected tab uses separate backdrop refraction and lifted-content warp.
+The shape field blends toward circular ends as the bounds narrow. The
+backdrop refraction tapers at the lens centerline, where the sampling
+direction changes sides. The renderer uses the Android tab views and springs
+with RenderNode sampling and compositing. The centerline taper, highlight
+settings and chromatic edge are Android adaptations.
 Fidelity depends on the Android backdrop boundaries and on the material the
 iOS compositor selected for the reference frame.
 

@@ -36,21 +36,35 @@ final class GlassShaders {
     // All geometry is in physical pixels. The gradient points out of the shape.
     private static final String SHAPE = """
             float3 field(float2 p, float2 halfSize, float radius, float ovalization) {
-                const float cornerScale = 1.5286649465560913;
-                float corner = radius * cornerScale;
-                float2 fromSide = abs(p) - halfSize + corner;
-                float2 q = max(fromSide, 0.0) / corner;
-                float ratio = min(q.x, q.y) / max(max(q.x, q.y), 0.00001);
-                float correction = (((-0.926054 * ratio + 3.1560099124908447) * ratio - 3.64122)
-                                    * ratio + 1.26803) * ratio + 0.268531;
-                float len = length(q);
-                float dist = corner * (len - 1.0 / (1.0 - ratio * ratio * min(len, 1.0) * correction))
-                           + min(max(fromSide.x, fromSide.y), 0.0);
-                float2 normal = fromSide.x > fromSide.y ? float2(1, 0) : float2(0, 1);
-                if (dot(q, q) > 0.0) normal = normalize(q);
+                const float k = 1.5286649465560913;
+                float r = max(abs(radius), 0.00001);
+                float R = r * k;
+                // QuartzCore blends toward circular ends as the bounds narrow.
+                float2 c = clamp(2.8915570351735034 - 1.4457785175867517 * (2.0 * halfSize) / R, 0.0, 1.0);
+                float inset = mix(R, r, max(c.x, c.y));
+                float2 ap = abs(p);
+                float2 fromInset = ap - halfSize + inset;
+                float inside = min(max(fromInset.x, fromInset.y), 0.0);
+
+                float2 v = max((ap - halfSize + R) / R, 0.0);
+                float L = length(v);
+                float vmax = max(v.x, v.y);
+                float t = vmax == 0.0 ? 0.0 : clamp(min(v.x, v.y) / vmax, 0.0, 1.0);
+                float P = (((-0.926054 * t + 3.1560099124908447) * t - 3.64122) * t + 1.26803) * t + 0.268531;
+                float rounded = L + 1.0 - 1.0 / (1.0 - t * t * min(L, 1.0) * P);
+                float circular = 0.6541655659675598 * length(max(k * v - 0.5286649465560913, 0.0))
+                               + 0.3458344340324402;
+                float sgn = v.y > v.x ? 1.0 : -1.0;
+                float cornerDist = mix(mix(rounded, circular, c.x), mix(rounded, circular, c.y),
+                                       clamp(0.5 - sgn + sgn * t, 0.0, 1.0));
+                float dist = R * (cornerDist - 1.0) + inside;
+
+                float2 ext = max(fromInset, 0.0);
+                float2 normal = fromInset.x > fromInset.y ? float2(1, 0) : float2(0, 1);
+                if (dot(ext, ext) > 0.0) normal = normalize(ext);
                 normal *= mix(float2(-1), float2(1), step(float2(0), p));
                 if (ovalization > 0.0) {
-                    float2 oval = p * float2(1.0, halfSize.x / halfSize.y);
+                    float2 oval = p * float2(1.0, halfSize.x / max(halfSize.y, 0.00001));
                     oval /= max(length(oval), 0.00001);
                     normal = normalize(mix(normal, oval, ovalization));
                 }
@@ -203,7 +217,11 @@ final class GlassShaders {
                 float3 shape = capsuleField(p - center, extent * 0.5, 0.5);
                 float coverage = clamp(0.5 - shape.x, 0.0, 1.0);
                 float depth = -shape.x / density;
-                float amount = offset(9.0, 36.0, depth) * density * lift;
+                // The closest edge switches across a capsule's medial axis.
+                // Taper refraction there so the live backdrop samples join smoothly.
+                float radius = min(extent.x, extent.y) * 0.5 / density;
+                float taper = smoothstep(0.0, min(6.0, radius * 0.25), radius - depth);
+                float amount = offset(9.0, 36.0, depth) * density * lift * taper;
                 return mix(float3(scene.eval(p).rgb),
                            float3(scene.eval(p + amount * shape.yz).rgb), coverage);
             }
