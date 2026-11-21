@@ -38,6 +38,20 @@ public final class LiquidGlass {
         return GlassMiniPlayer.onControlTouch(activity.getWindow(), event);
     }
 
+    @SuppressWarnings("unused")
+    public static boolean ownsPlayerControlTouch(View sheet) {
+        return sheet.getId() != View.NO_ID
+                && sheet.getTag(sheet.getId()) instanceof GlassMiniPlayer mini
+                && mini.ownsControlTouch();
+    }
+
+    @SuppressWarnings("unused")
+    public static void layoutPlayerBackground(View view, ViewGroup.LayoutParams params) {
+        if (!view.isLaidOut() || view.getWidth() != params.width || view.getHeight() != params.height) {
+            view.setLayoutParams(params);
+        }
+    }
+
     private static void installWhenReady(View root) {
         View navigation = find(root, "bottom_nav_view");
         View originalBlur = find(root, "bottom_nav_blur");
@@ -84,6 +98,35 @@ public final class LiquidGlass {
     static View find(View root, String name) {
         int id = root.getResources().getIdentifier(name, "id", root.getContext().getPackageName());
         return id == 0 ? null : root.findViewById(id);
+    }
+
+    static View currentPlayerPage(View host) {
+        if (host instanceof ViewGroup pages) {
+            for (int i = pages.getChildCount() - 1; i >= 0; i--) {
+                View page = pages.getChildAt(i);
+                if (page instanceof ViewGroup && page.isShown()) return page;
+            }
+        }
+        return null;
+    }
+
+    static View findVisible(View root, String name) {
+        int id = root.getResources().getIdentifier(name, "id", root.getContext().getPackageName());
+        if (id == 0) return null;
+        View first = root.findViewById(id);
+        return first == null || first.isShown() ? first : findVisible(root, id);
+    }
+
+    private static View findVisible(View root, int id) {
+        if (!root.isShown()) return null;
+        if (root.getId() == id) return root;
+        if (root instanceof ViewGroup group) {
+            for (int i = group.getChildCount() - 1; i >= 0; i--) {
+                View found = findVisible(group.getChildAt(i), id);
+                if (found != null) return found;
+            }
+        }
+        return null;
     }
 
     interface Backdrop {

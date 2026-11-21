@@ -84,7 +84,8 @@ final class GlassDrawable extends Drawable {
     }
 
     @Override public void getOutline(Outline outline) {
-        outline.setRoundRect(getBounds(), getBounds().height() / 2f);
+        if (transitionBounds == null) outline.setRoundRect(getBounds(), getBounds().height() / 2f);
+        else outline.setEmpty();
     }
     void setTransitionShape(Rect bounds, float radius) {
         if (transitionBounds == null) transitionBounds = new Rect();

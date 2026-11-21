@@ -22,6 +22,10 @@ final class GlassPlayerMetadata extends Drawable {
     private final int songId;
     private final int artworkId;
     private final int currentMetadataId;
+    private final int titleId;
+    private final int subtitleId;
+    private final int miniTitleId;
+    private final int miniSubtitleId;
     private final int[] location = new int[2];
     private final RectF layers = new RectF();
     private final Paint additive = new Paint();
@@ -38,18 +42,22 @@ final class GlassPlayerMetadata extends Drawable {
         songId = id("player_container");
         artworkId = id("fullplayerSongImage");
         currentMetadataId = id("text_metadata_container");
+        titleId = id("title");
+        subtitleId = id("subtitle");
+        miniTitleId = id("mini_player_title");
+        miniSubtitleId = id("mini_player_subtitle");
         additive.setBlendMode(BlendMode.PLUS);
     }
 
-    void update(float progress) {
+    void update(float progress, int alpha) {
         View expanded = currentMetadata();
         if (expanded == null) {
             release();
             return;
         }
         boolean song = expanded.getId() == songId;
-        title.use(text(LiquidGlass.find(expanded, song ? "title" : "mini_player_title")));
-        artist.use(text(LiquidGlass.find(expanded, song ? "subtitle" : "mini_player_subtitle")));
+        title.use(text(expanded.findViewById(song ? titleId : miniTitleId)));
+        artist.use(text(expanded.findViewById(song ? subtitleId : miniSubtitleId)));
         if (title.expanded == null && artist.expanded == null) {
             release();
             return;
@@ -62,7 +70,7 @@ final class GlassPlayerMetadata extends Drawable {
         title.position(progress, originX, originY, location, layers);
         artist.position(progress, originX, originY, location, layers);
         positionAroundArtwork(expanded, progress, originX, originY);
-        expandedAlpha = Math.round(255f * smoothStep(progress));
+        expandedAlpha = alpha;
         setBounds(0, 0, player.getWidth(), player.getHeight());
         if (!attached) {
             player.getOverlay().add(this);
@@ -120,8 +128,8 @@ final class GlassPlayerMetadata extends Drawable {
         // Keep the text beside the artwork while it clears the bottom corner.
         // Leave its horizontal path free once the artwork is above both labels.
         float gap = 4f * player.getResources().getDisplayMetrics().density;
-        float shiftBelow = smoothStep(progress / 0.12f);
-        float shiftIn = smoothStep((progress - 0.12f) / 0.12f);
+        float shiftBelow = GlassPlayerMorph.smoothStep(progress / 0.12f);
+        float shiftIn = GlassPlayerMorph.smoothStep((progress - 0.12f) / 0.12f);
         float right = left + artwork.getWidth() * artwork.getScaleX();
         float side = leading.rtl ? Math.min(0f, left - layers.right - gap)
                 : Math.max(0f, right - layers.left + gap);
@@ -130,16 +138,12 @@ final class GlassPlayerMetadata extends Drawable {
     }
 
     private View currentMetadata() {
-        if (host == null) return null;
-        for (int i = host.getChildCount() - 1; i >= 0; i--) {
-            View page = host.getChildAt(i);
-            if (!page.isShown()) continue;
-            View song = songId == 0 ? null : page.findViewById(songId);
-            if (song != null && song.isShown()) return song;
-            View other = currentMetadataId == 0 ? null : page.findViewById(currentMetadataId);
-            if (other != null && other.isShown()) return other;
-        }
-        return null;
+        View page = LiquidGlass.currentPlayerPage(host);
+        if (page == null) return null;
+        View song = page.findViewById(songId);
+        if (song != null && song.isShown()) return song;
+        View other = page.findViewById(currentMetadataId);
+        return other != null && other.isShown() ? other : null;
     }
 
     private int id(String name) {
@@ -148,11 +152,6 @@ final class GlassPlayerMetadata extends Drawable {
 
     private static TextView text(View view) {
         return view instanceof TextView label ? label : null;
-    }
-
-    private static float smoothStep(float progress) {
-        float t = Math.max(0f, Math.min(progress, 1f));
-        return t * t * (3f - 2f * t);
     }
 
     private static final class Label {
@@ -173,7 +172,9 @@ final class GlassPlayerMetadata extends Drawable {
         }
 
         void use(TextView next) {
-            if (!ready(mini) || !ready(next)) next = null;
+            // The native mini-player can still be INVISIBLE at the endpoint.
+            // Its laid-out text can be drawn directly into the crossfade.
+            if (!ready(mini) || !ready(next) || !next.isShown()) next = null;
             if (next == expanded) return;
             release();
             if (next == null) return;
@@ -242,7 +243,8 @@ final class GlassPlayerMetadata extends Drawable {
         }
 
         private static boolean ready(TextView view) {
-            return view != null && view.isShown() && view.getWidth() > 0 && view.getHeight() > 0
+            return view != null && view.getVisibility() == View.VISIBLE
+                    && view.getWidth() > 0 && view.getHeight() > 0
                     && view.getLayout() != null && view.getTextSize() > 0 && !TextUtils.isEmpty(view.getText());
         }
 
