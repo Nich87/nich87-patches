@@ -4,6 +4,7 @@ import android.animation.ValueAnimator;
 import android.graphics.Outline;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
@@ -16,6 +17,7 @@ final class GlassPlayerTransition {
     private final ViewGroup player;
     private final View mini;
     private final View target;
+    private final GlassPlayerMetadata metadata;
     private final Rect miniBounds = new Rect();
     private final Rect clip = new Rect();
     private final Rect surfaceBounds = new Rect();
@@ -36,6 +38,7 @@ final class GlassPlayerTransition {
         this.player = player;
         this.mini = mini;
         this.target = target;
+        metadata = Build.VERSION.SDK_INT >= 29 ? new GlassPlayerMetadata(player, mini) : null;
     }
 
     boolean isRunning() { return running; }
@@ -71,6 +74,7 @@ final class GlassPlayerTransition {
             player.setClipToOutline(true);
             miniGlass.setAlpha(0);
         }
+        if (metadata != null) metadata.update(progress);
 
         // Apple Music supplies the artwork, controls and palette. Fade the live glass
         // underneath them early so the renderer never filters a full-screen sheet.
@@ -98,6 +102,7 @@ final class GlassPlayerTransition {
     private void restore() {
         if (!running) return;
         running = false;
+        if (metadata != null) metadata.release();
         if (sheet.getBackground() == surface) sheet.setBackground(originalBackground);
         player.setOutlineProvider(originalOutline);
         player.setClipToOutline(originalClip);
