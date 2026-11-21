@@ -1,12 +1,16 @@
 package app.voidhack.extension.applemusic;
 
+import android.app.Activity;
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.RenderNode;
 import android.os.Build;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 
 import java.lang.reflect.Field;
 
@@ -22,6 +26,18 @@ public final class LiquidGlass {
         root.post(() -> installWhenReady(root));
     }
 
+    @SuppressWarnings("unused")
+    public static void onPlayerSlide(View sheet, float progress) {
+        if (sheet.getId() != View.NO_ID && sheet.getTag(sheet.getId()) instanceof GlassMiniPlayer miniPlayer) {
+            miniPlayer.onPlayerSlide(progress);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public static boolean onPlayerControlTouch(Activity activity, MotionEvent event) {
+        return GlassMiniPlayer.onControlTouch(activity.getWindow(), event);
+    }
+
     private static void installWhenReady(View root) {
         View navigation = find(root, "bottom_nav_view");
         View originalBlur = find(root, "bottom_nav_blur");
@@ -30,6 +46,12 @@ public final class LiquidGlass {
                 || navigation.getBackground() instanceof GlassDrawable) return;
         Backdrop backdrop = backdrop(target, navigation);
         GlassController controller = new GlassController((ViewGroup) navigation, backdrop);
+        for (ViewParent parent = navigation.getParent();
+                parent instanceof ViewGroup && parent != root;
+                parent = parent.getParent()) {
+            ((ViewGroup) parent).setClipChildren(false);
+            ((ViewGroup) parent).setClipToPadding(false);
+        }
         navigation.setBackground(controller.material);
         if (backdrop != null) originalBlur.setVisibility(View.INVISIBLE);
         navigation.addOnAttachStateChangeListener(controller);
@@ -65,8 +87,9 @@ public final class LiquidGlass {
     }
 
     interface Backdrop {
-        void draw(Canvas canvas, RectF bounds, boolean dark, float parallax);
-        void drawLens(Canvas canvas, RectF bounds, boolean dark, float press, ViewGroup menu);
+        boolean draw(Canvas canvas, RectF bounds, float cornerRadius, boolean dark, float parallax,
+                     float engagement, int opacity);
+        void drawLens(Canvas canvas, RectF bounds, boolean dark, float press, ViewGroup menu, Paint composite);
         void release();
     }
 }
