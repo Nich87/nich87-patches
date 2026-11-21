@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 
 import java.lang.reflect.Field;
 
@@ -45,6 +46,12 @@ public final class LiquidGlass {
                 || navigation.getBackground() instanceof GlassDrawable) return;
         Backdrop backdrop = backdrop(target, navigation);
         GlassController controller = new GlassController((ViewGroup) navigation, backdrop);
+        for (ViewParent parent = navigation.getParent();
+                parent instanceof ViewGroup && parent != root;
+                parent = parent.getParent()) {
+            ((ViewGroup) parent).setClipChildren(false);
+            ((ViewGroup) parent).setClipToPadding(false);
+        }
         navigation.setBackground(controller.material);
         if (backdrop != null) originalBlur.setVisibility(View.INVISIBLE);
         navigation.addOnAttachStateChangeListener(controller);
