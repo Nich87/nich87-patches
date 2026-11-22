@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-22T18:51:34",
-  "description": "## [1.5.0-dev.2](https://github.com/Nich87/nich87-patches/compare/v1.5.0-dev.1...v1.5.0-dev.2) (2026-11-22)\n\n### ✨ New Features\n\n* Add LRCLIB lyrics patch for Apple Music ([70edb64](https://github.com/Nich87/nich87-patches/commit/70edb64727fef2c7b782857743412ae0b4df736f))",
-  "download_url": "https://github.com/Nich87/nich87-patches/releases/download/v1.5.0-dev.2/patches-1.5.0-dev.2.mpp",
+  "created_at": "2026-11-22T19:22:56",
+  "description": "## [1.5.0-dev.3](https://github.com/Nich87/nich87-patches/compare/v1.5.0-dev.2...v1.5.0-dev.3) (2026-11-22)\n\n### ✨ New Features\n\n* Add custom font patch for Apple Music ([4bef5cc](https://github.com/Nich87/nich87-patches/commit/4bef5ccd5fcbec59e379b475077c98ee3775799b))",
+  "download_url": "https://github.com/Nich87/nich87-patches/releases/download/v1.5.0-dev.3/patches-1.5.0-dev.3.mpp",
   "signature_download_url": "",
-  "version": "1.5.0-dev.2"
+  "version": "1.5.0-dev.3"
 }
