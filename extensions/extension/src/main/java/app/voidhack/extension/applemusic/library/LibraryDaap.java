@@ -153,7 +153,7 @@ final class LibraryDaap {
         if (sessionId == 0) throw new Failure(Kind.IDENTITY, "login:session_zero");
         DaapCodec.Node databases = daap("databases", "GET", BASE + "/databases?session-id=" + sessionId + "&delta=0",
                 new byte[0], "avdb", honourCancellation);
-        List<DaapCodec.Node> records = databases.required("mlcl").children;
+        List<DaapCodec.Node> records = databases.required("mlcl").children();
         if (records.size() != 1 || !records.get(0).code.equals("mlit")) {
             throw new Failure(Kind.IDENTITY, "databases:records=" + records.size());
         }
@@ -167,14 +167,15 @@ final class LibraryDaap {
     }
 
     private List<Track> parseTracks(DaapCodec.Node response) throws IOException {
-        List<DaapCodec.Node> nodes = response.required("mlcl").children;
+        List<DaapCodec.Node> nodes = response.required("mlcl").children();
         long returned = response.required("mrco").unsigned32();
         if (returned != nodes.size()) {
             throw new Failure(Kind.PROTOCOL, "items:mrco=" + returned + ",nodes=" + nodes.size());
         }
         List<Track> tracks = new ArrayList<>(nodes.size());
-        for (DaapCodec.Node node : nodes) {
-            if (!node.code.equals("mlit")) throw new Failure(Kind.PROTOCOL, "items:unexpected_node");
+        for (DaapCodec.Node record : nodes) {
+            if (!record.code.equals("mlit")) throw new Failure(Kind.PROTOCOL, "items:unexpected_node");
+            DaapCodec.Node node = record.readTrackFields();
             long cloudId = node.required("miid").unsigned32();
             if (cloudId == 0) throw new Failure(Kind.IDENTITY, "items:cloud_id_zero");
             DaapCodec.Node catalog = node.child("ajsa");

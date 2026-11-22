@@ -28,14 +28,15 @@ final class DaapCodec {
 
     static Node root(byte[] body, String expected) throws IOException {
         if (body.length > MAX_BODY) throw new FormatException("DAAP response is too large (bytes=" + body.length + ")");
-        List<Node> nodes = parse(body, 0, body.length, 0, new int[]{0});
+        List<Node> nodes = parse(body, 0, body.length, 0, new int[]{0}, "adbs".equals(expected));
         if (nodes.size() != 1 || !nodes.get(0).code.equals(expected)) {
             throw new FormatException("Unexpected DAAP response type (expected=" + expected + ", count=" + nodes.size() + ")");
         }
         return nodes.get(0);
     }
 
-    private static List<Node> parse(byte[] body, int start, int end, int depth, int[] count) throws IOException {
+    private static List<Node> parse(byte[] body, int start, int end, int depth, int[] count,
+                                    boolean trackListPath) throws IOException {
         if (depth > MAX_DEPTH) throw new FormatException("DAAP nesting is too deep");
         List<Node> nodes = new ArrayList<>();
         for (int offset = start; offset < end;) {
@@ -53,8 +54,14 @@ final class DaapCodec {
                         + ", remaining=" + (end - offset - 8) + ")");
             }
             int next = offset + 8 + length;
-            List<Node> children = CONTAINERS.contains(code)
-                    ? parse(body, offset + 8, next, depth + 1, count) : Collections.emptyList();
+            List<Node> children = Collections.emptyList();
+            if (trackListPath && depth == 2 && "mlit".equals(code)) {
+                // Decode each track's fields separately so a large library does not keep all fields in memory.
+                children = null;
+            } else if (CONTAINERS.contains(code)) {
+                boolean trackContainer = (depth == 0 && "adbs".equals(code)) || (depth == 1 && "mlcl".equals(code));
+                children = parse(body, offset + 8, next, depth + 1, count, trackListPath && trackContainer);
+            }
             nodes.add(new Node(code, body, offset + 8, length, children));
             offset = next;
         }
@@ -102,7 +109,7 @@ final class DaapCodec {
 
     static final class Node {
         final String code;
-        final List<Node> children;
+        private final List<Node> children;
         private final byte[] body;
         private final int offset, length;
 
@@ -114,9 +121,16 @@ final class DaapCodec {
             this.children = children;
         }
 
+        Node readTrackFields() throws IOException {
+            if (children != null) return this;
+            return new Node(code, body, offset, length, parse(body, offset, offset + length, 3, new int[]{0}, false));
+        }
+
+        List<Node> children() throws IOException { return readTrackFields().children; }
+
         Node child(String name) throws IOException {
             Node result = null;
-            for (Node node : children) if (node.code.equals(name)) {
+            for (Node node : children()) if (node.code.equals(name)) {
                 if (result != null) throw new FormatException("Duplicate DAAP field (code=" + name + ")");
                 result = node;
             }
