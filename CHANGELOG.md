@@ -1,3 +1,9 @@
+## [1.4.0-dev.3](https://github.com/Nich87/nich87-patches/compare/v1.4.0-dev.2...v1.4.0-dev.3) (2026-11-22)
+
+### 🐛 Bug Fixes
+
+* Scan large Apple Music cloud libraries ([0079fb2](https://github.com/Nich87/nich87-patches/commit/0079fb2349eb21f5bf19a8750e0662964b3d49c1))
+
 ## [1.4.0-dev.2](https://github.com/Nich87/nich87-patches/compare/v1.4.0-dev.1...v1.4.0-dev.2) (2026-11-22)
 
 ### ✨ New Features
