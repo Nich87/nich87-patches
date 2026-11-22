@@ -1,3 +1,9 @@
+## [1.5.0-dev.2](https://github.com/Nich87/nich87-patches/compare/v1.5.0-dev.1...v1.5.0-dev.2) (2026-11-22)
+
+### ✨ New Features
+
+* Add LRCLIB lyrics patch for Apple Music ([70edb64](https://github.com/Nich87/nich87-patches/commit/70edb64727fef2c7b782857743412ae0b4df736f))
+
 ## [1.5.0-dev.1](https://github.com/Nich87/nich87-patches/compare/v1.4.0...v1.5.0-dev.1) (2026-11-22)
 
 ### ✨ New Features

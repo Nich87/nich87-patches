@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-22T17:12:58",
-  "description": "## [1.5.0-dev.1](https://github.com/Nich87/nich87-patches/compare/v1.4.0...v1.5.0-dev.1) (2026-11-22)\n\n### ✨ New Features\n\n* Add Twitter/X Spaces local mute patch ([1852f16](https://github.com/Nich87/nich87-patches/commit/1852f1664cc376047048f4cf22e085745c7156c7))",
-  "download_url": "https://github.com/Nich87/nich87-patches/releases/download/v1.5.0-dev.1/patches-1.5.0-dev.1.mpp",
+  "created_at": "2026-11-22T18:51:34",
+  "description": "## [1.5.0-dev.2](https://github.com/Nich87/nich87-patches/compare/v1.5.0-dev.1...v1.5.0-dev.2) (2026-11-22)\n\n### ✨ New Features\n\n* Add LRCLIB lyrics patch for Apple Music ([70edb64](https://github.com/Nich87/nich87-patches/commit/70edb64727fef2c7b782857743412ae0b4df736f))",
+  "download_url": "https://github.com/Nich87/nich87-patches/releases/download/v1.5.0-dev.2/patches-1.5.0-dev.2.mpp",
   "signature_download_url": "",
-  "version": "1.5.0-dev.1"
+  "version": "1.5.0-dev.2"
 }
