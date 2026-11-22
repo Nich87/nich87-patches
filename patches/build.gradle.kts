@@ -33,6 +33,9 @@ tasks.named<JavaCompile>("compileTestJava") {
         include("LibraryBackup.java", "LibraryImportPlan.java", "LibraryFailure.java", "DaapCodec.java",
             "LibraryDaap.java", "MusicReflection.java", "MusicLibrary.java", "MetadataField.java", "MetadataCatalog.java", "LibraryMetadata.java")
     })
+    source(project(":extensions:extension").fileTree("src/main/java/app/voidhack/extension/twitter/spaces/mute") {
+        include("SpaceLocalMuteLogic.java")
+    })
 }
 
 tasks {
