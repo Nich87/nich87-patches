@@ -42,7 +42,7 @@ Enable pre-releases for development builds from `dev`.
 ## Patches
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.5.0-dev.3](https://github.com/Nich87/nich87-patches/releases/tag/v1.5.0-dev.3)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;6 patches total
+> **[v1.5.0-dev.4](https://github.com/Nich87/nich87-patches/releases/tag/v1.5.0-dev.4)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;6 patches total
 <details open>
 <summary>📦 Apple Music&nbsp;&nbsp;•&nbsp;&nbsp;5 patches</summary>
 <br>

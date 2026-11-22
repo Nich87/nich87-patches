@@ -1,3 +1,9 @@
+## [1.5.0-dev.4](https://github.com/Nich87/nich87-patches/compare/v1.5.0-dev.3...v1.5.0-dev.4) (2026-11-22)
+
+### ✨ New Features
+
+* Support Apple Music 7.0.3 ([ccbe0c8](https://github.com/Nich87/nich87-patches/commit/ccbe0c8ce02f426ddefccdecb4a8f00e8b914fc3))
+
 ## [1.5.0-dev.3](https://github.com/Nich87/nich87-patches/compare/v1.5.0-dev.2...v1.5.0-dev.3) (2026-11-22)
 
 ### ✨ New Features

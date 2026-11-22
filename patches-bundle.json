@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-22T19:47:14",
-  "description": "## [1.5.0-dev.3](https://github.com/Nich87/nich87-patches/compare/v1.5.0-dev.2...v1.5.0-dev.3) (2026-11-22)\n\n### ✨ New Features\n\n* Add custom font patch for Apple Music ([4bef5cc](https://github.com/Nich87/nich87-patches/commit/4bef5ccd5fcbec59e379b475077c98ee3775799b))\n* Support Apple Music 7.0.3 ([ccbe0c8](https://github.com/Nich87/nich87-patches/commit/ccbe0c8ce02f426ddefccdecb4a8f00e8b914fc3))",
-  "download_url": "https://github.com/Nich87/nich87-patches/releases/download/v1.5.0-dev.3/patches-1.5.0-dev.3.mpp",
+  "created_at": "2026-11-22T19:52:41",
+  "description": "## [1.5.0-dev.4](https://github.com/Nich87/nich87-patches/compare/v1.5.0-dev.3...v1.5.0-dev.4) (2026-11-22)\n\n### ✨ New Features\n\n* Support Apple Music 7.0.3 ([ccbe0c8](https://github.com/Nich87/nich87-patches/commit/ccbe0c8ce02f426ddefccdecb4a8f00e8b914fc3))",
+  "download_url": "https://github.com/Nich87/nich87-patches/releases/download/v1.5.0-dev.4/patches-1.5.0-dev.4.mpp",
   "signature_download_url": "",
-  "version": "1.5.0-dev.3"
+  "version": "1.5.0-dev.4"
 }
