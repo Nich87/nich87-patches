@@ -51,8 +51,8 @@ Enable pre-releases for development builds from `dev`.
 
 **🎯 Supported versions:**
 
-| 7.0.0 | 7.0.1 | 7.0.2 |
-| :---: | :---: | :---: |
+| 7.0.0 | 7.0.1 | 7.0.2 | 7.0.3 |
+| :---: | :---: | :---: | :---: |
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|

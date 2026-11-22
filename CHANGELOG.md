@@ -3,6 +3,13 @@
 ### ✨ New Features
 
 * Add custom font patch for Apple Music ([4bef5cc](https://github.com/Nich87/nich87-patches/commit/4bef5ccd5fcbec59e379b475077c98ee3775799b))
+* Support Apple Music 7.0.3 ([ccbe0c8](https://github.com/Nich87/nich87-patches/commit/ccbe0c8ce02f426ddefccdecb4a8f00e8b914fc3))
+
+## [1.5.0-dev.3](https://github.com/Nich87/nich87-patches/compare/v1.5.0-dev.2...v1.5.0-dev.3) (2026-11-22)
+
+### ✨ New Features
+
+* Add custom font patch for Apple Music ([4bef5cc](https://github.com/Nich87/nich87-patches/commit/4bef5ccd5fcbec59e379b475077c98ee3775799b))
 
 ## [1.5.0-dev.2](https://github.com/Nich87/nich87-patches/compare/v1.5.0-dev.1...v1.5.0-dev.2) (2026-11-22)
 

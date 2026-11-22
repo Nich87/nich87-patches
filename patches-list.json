@@ -52,6 +52,18 @@
               "isExperimental": false,
               "minSdk": null,
               "description": null
+            },
+            {
+              "version": "7.0.3",
+              "versionCodes": {
+                "ARM64_V8A": 1626,
+                "ARMEABI_V7A": 1626,
+                "X86_64": 1626,
+                "X86": 1626
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
             }
           ]
         }
@@ -104,6 +116,18 @@
                 "ARMEABI_V7A": 1624,
                 "X86_64": 1624,
                 "X86": 1624
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            },
+            {
+              "version": "7.0.3",
+              "versionCodes": {
+                "ARM64_V8A": 1626,
+                "ARMEABI_V7A": 1626,
+                "X86_64": 1626,
+                "X86": 1626
               },
               "isExperimental": false,
               "minSdk": null,
@@ -164,6 +188,18 @@
               "isExperimental": false,
               "minSdk": null,
               "description": null
+            },
+            {
+              "version": "7.0.3",
+              "versionCodes": {
+                "ARM64_V8A": 1626,
+                "ARMEABI_V7A": 1626,
+                "X86_64": 1626,
+                "X86": 1626
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
             }
           ]
         }
@@ -220,6 +256,18 @@
               "isExperimental": false,
               "minSdk": null,
               "description": null
+            },
+            {
+              "version": "7.0.3",
+              "versionCodes": {
+                "ARM64_V8A": 1626,
+                "ARMEABI_V7A": 1626,
+                "X86_64": 1626,
+                "X86": 1626
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
             }
           ]
         }
@@ -272,6 +320,18 @@
                 "ARMEABI_V7A": 1624,
                 "X86_64": 1624,
                 "X86": 1624
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            },
+            {
+              "version": "7.0.3",
+              "versionCodes": {
+                "ARM64_V8A": 1626,
+                "ARMEABI_V7A": 1626,
+                "X86_64": 1626,
+                "X86": 1626
               },
               "isExperimental": false,
               "minSdk": null,
