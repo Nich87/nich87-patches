@@ -1,3 +1,9 @@
+## [1.5.0-dev.1](https://github.com/Nich87/nich87-patches/compare/v1.4.0...v1.5.0-dev.1) (2026-11-22)
+
+### ✨ New Features
+
+* Add Twitter/X Spaces local mute patch ([1852f16](https://github.com/Nich87/nich87-patches/commit/1852f1664cc376047048f4cf22e085745c7156c7))
+
 ## [1.4.0](https://github.com/Nich87/nich87-patches/compare/v1.3.0...v1.4.0) (2026-11-22)
 
 ### ✨ New Features
