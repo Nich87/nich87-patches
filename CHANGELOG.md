@@ -1,3 +1,9 @@
+## [1.4.0-dev.2](https://github.com/Nich87/nich87-patches/compare/v1.4.0-dev.1...v1.4.0-dev.2) (2026-11-22)
+
+### ✨ New Features
+
+* Add diagnostics for Apple Music metadata repair ([9dc51ec](https://github.com/Nich87/nich87-patches/commit/9dc51ec04a346b368be59b657dd4c17d807e0cfc))
+
 ## [1.4.0-dev.1](https://github.com/Nich87/nich87-patches/compare/v1.3.0...v1.4.0-dev.1) (2026-11-21)
 
 ### ✨ New Features
