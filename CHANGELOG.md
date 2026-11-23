@@ -1,3 +1,9 @@
+## [1.6.0-dev.1](https://github.com/Nich87/nich87-patches/compare/v1.5.0...v1.6.0-dev.1) (2026-11-23)
+
+### ✨ New Features
+
+* Add on-device vocal separation for Apple Music ([80a9d1b](https://github.com/Nich87/nich87-patches/commit/80a9d1bd083c7ec1b250336c58e2c28727c8d44a))
+
 ## [1.5.0](https://github.com/Nich87/nich87-patches/compare/v1.4.0...v1.5.0) (2026-11-22)
 
 ### ✨ New Features
