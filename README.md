@@ -17,13 +17,14 @@
   <a href="https://github.com/Nich87/nich87-patches/actions"><img src="https://img.shields.io/github/actions/workflow/status/Nich87/nich87-patches/release.yml?branch=main&style=flat-square&label=CI" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Nich87/nich87-patches?style=flat-square" alt="License"></a>
   <a href="https://morphe.software"><img src="https://img.shields.io/badge/Morphe-compatible-00D26A?style=flat-square" alt="Morphe Compatibility"></a>
-  <a href="https://play.google.com/store/apps/details?id=com.apple.android.music"><img src="https://img.shields.io/badge/Apple%20Music-v7.0.0-FA243C?logo=apple-music&logoColor=white&style=flat-square" alt="Apple Music 7.0.0"></a>
+  <a href="https://play.google.com/store/apps/details?id=com.apple.android.music"><img src="https://img.shields.io/badge/Apple%20Music-v7.0.0--7.0.3-FA243C?logo=apple-music&logoColor=white&style=flat-square" alt="Apple Music 7.0.0-7.0.3"></a>
+  <a href="https://play.google.com/store/apps/details?id=com.twitter.android"><img src="https://img.shields.io/badge/X-v12.19.1-000000?logo=x&logoColor=white&style=flat-square" alt="X (Twitter) 12.19.1-release.0"></a>
 </p>
 
 <p align="center">
   <strong>Custom patches by Nich87 for use with <a href="https://morphe.software">Morphe</a>.</strong><br>
   This is an independent project based on the <a href="https://github.com/MorpheApp/morphe-patches-template">Morphe patches template</a>.<br>
-  Apple Music patches provide a Liquid Glass bottom bar, library import, export and downloads, and Japanese metadata repair. Each patch can be selected independently.
+  Provides Apple Music patches (Liquid Glass bottom bar, custom fonts, LRCLIB lyrics with on-device pronunciation guides and line editing, on-device stereo &amp; Dolby Atmos vocal separation, library backup/downloads, and Japanese metadata repair) and Twitter/X Spaces local mute. Each patch can be selected independently.
 </p>
 
 </div>
