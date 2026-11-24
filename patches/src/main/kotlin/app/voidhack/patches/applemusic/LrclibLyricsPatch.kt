@@ -164,7 +164,7 @@ private object LyricsScriptMatch : Fingerprint(
 @Suppress("unused")
 val lrclibLyricsPatch = bytecodePatch(
     name = "LRCLIB lyrics",
-    description = "Fetches lyrics from LRCLIB with per-song overrides, timing offsets and a source indicator. Optionally generates pronunciation guides for Apple Music and LRCLIB lyrics on-device.",
+    description = "Loads synced and unsynced local LRC files (per-song or auto-matched folder) and fetches lyrics from LRCLIB with per-song overrides, timing offsets, and a source indicator. Optionally generates pronunciation guides on-device.",
 ) {
 
     dependsOn(

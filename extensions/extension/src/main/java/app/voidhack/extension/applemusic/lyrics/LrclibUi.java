@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 final class LrclibUi {
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
     private static boolean dictionaryDownloading;
+    private static boolean folderScanning;
     private static final ExecutorService UI_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "VoidhackLrclibUi");
         t.setDaemon(true);
@@ -51,6 +52,27 @@ final class LrclibUi {
     });
 
     private LrclibUi() {}
+
+    private static void rescanLocalFolder(final Activity activity, final Runnable rebuild, final boolean showToast) {
+        if (folderScanning) return;
+        folderScanning = true;
+        if (rebuild != null) rebuild.run();
+        final Context context = activity.getApplicationContext();
+        UI_EXECUTOR.execute(() -> {
+            LocalLrcFolder.ScanResult result = LocalLrcFolder.rescanNow(context);
+            MAIN.post(() -> {
+                folderScanning = false;
+                LrclibController.onLocalFolderChanged(context);
+                if (showToast) {
+                    String msg = result.accessible
+                            ? LrclibStrings.text(context, "local_folder_rescanned", result.fileCount)
+                            : LrclibStrings.text(context, "local_folder_inaccessible");
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
+                }
+                if (rebuild != null && !activity.isDestroyed()) rebuild.run();
+            });
+        });
+    }
 
     private static void downloadDictionary(Activity activity, Runnable rebuild) {
         if (dictionaryDownloading) return;
@@ -178,6 +200,21 @@ final class LrclibUi {
                         () -> {}
                 );
             }
+            if (activeMode == LrclibModels.OverrideMode.FORCE_LOCAL_LRC && ov != null) {
+                modeCard.addView(page.separator(), page.sepParams());
+                String fileLabel = ov.localFileName.isEmpty() ? "lyrics.lrc" : ov.localFileName;
+                String subLabel = ov.localForceUnsynced
+                        ? LrclibStrings.text(activity, "override_local_file_unsynced")
+                        : null;
+                page.addRadioRow(
+                        modeCard,
+                        LrclibStrings.text(activity, "override_local_file", fileLabel),
+                        subLabel,
+                        true,
+                        true,
+                        () -> {}
+                );
+            }
             content.addView(modeCard, page.cardParams());
 
             // Search & Pick button (prominent filled CTA)
@@ -188,6 +225,15 @@ final class LrclibUi {
             LinearLayout.LayoutParams ctaParams = new LinearLayout.LayoutParams(-1, page.dp(48));
             ctaParams.setMargins(0, page.dp(12), 0, page.dp(4));
             content.addView(searchBtn, ctaParams);
+
+            // Load local LRC file button (secondary CTA)
+            TextView localBtn = page.secondaryButton(LrclibStrings.text(activity, "local_pick_action"));
+            localBtn.setOnClickListener(v -> LrcPickerFragment.pickFile(activity, (fileName, decoded) -> {
+                openLocalLrcPreview(activity, fragment, query, fileName, decoded, () -> page.dismiss());
+            }));
+            LinearLayout.LayoutParams localCtaParams = new LinearLayout.LayoutParams(-1, page.dp(46));
+            localCtaParams.setMargins(0, page.dp(6), 0, page.dp(4));
+            content.addView(localBtn, localCtaParams);
 
             // Per-song timing offset stepper
             LinearLayout offsetCard = page.card();
@@ -496,6 +542,113 @@ final class LrclibUi {
     }
 
     // =========================================================================
+    // 2b. Local LRC File Preview & Import Page
+    // =========================================================================
+
+    private static void openLocalLrcPreview(
+            final Activity activity,
+            final Object fragment,
+            final LrclibModels.TrackQuery query,
+            final String fileName,
+            final LocalLrcParser.DecodedText decoded,
+            final Runnable onApplied) {
+        final Page page = new Page(activity, LrclibStrings.text(activity, "local_preview_title"));
+        final LinearLayout content = page.createScrollBody();
+        final LocalLrcParser.LrcMetadata meta = LocalLrcParser.parseMetadata(decoded.text);
+        final boolean[] forceUnsynced = new boolean[]{false};
+
+        page.addFooterButton(LrclibStrings.text(activity, "apply_lyrics"), true, () -> {
+            boolean saved = LrclibController.applyLocalLrcFile(
+                    activity, fragment, query, fileName, decoded.text, forceUnsynced[0]);
+            if (!saved) {
+                Toast.makeText(activity, LrclibStrings.text(activity, "local_save_error"), Toast.LENGTH_LONG).show();
+                return;
+            }
+            page.dismiss();
+            if (onApplied != null) onApplied.run();
+        });
+
+        final Runnable[] render = new Runnable[1];
+        render[0] = () -> {
+            content.removeAllViews();
+            boolean allowWord = LrclibPrefs.isWordSyncEnabled(activity);
+            LrclibParser.PreparedRecord prepared = LocalLrcParser.prepareLocalLrc(
+                    decoded.text, query.durationSec, allowWord, forceUnsynced[0]);
+            int lineCount = (prepared.parsed != null) ? prepared.parsed.lines.size() : 0;
+
+            LinearLayout header = page.card();
+            TextView nameTv = page.text(fileName, 17, true, page.primary);
+            nameTv.setMaxLines(2);
+            nameTv.setEllipsize(TextUtils.TruncateAt.END);
+            header.addView(nameTv);
+
+            if (meta.hasAnyTag()) {
+                StringBuilder tagLine = new StringBuilder();
+                if (!meta.title.isEmpty()) tagLine.append(meta.title);
+                if (!meta.artist.isEmpty()) {
+                    if (tagLine.length() > 0) tagLine.append(" · ");
+                    tagLine.append(meta.artist);
+                }
+                if (!meta.album.isEmpty()) {
+                    if (tagLine.length() > 0) tagLine.append(" · ");
+                    tagLine.append(meta.album);
+                }
+                TextView tagTv = page.text(tagLine.toString(), 13, false, page.secondary);
+                tagTv.setPadding(0, page.dp(3), 0, 0);
+                tagTv.setMaxLines(2);
+                tagTv.setEllipsize(TextUtils.TruncateAt.END);
+                header.addView(tagTv);
+            }
+
+            LinearLayout chips = new LinearLayout(activity);
+            chips.setOrientation(LinearLayout.HORIZONTAL);
+            chips.setGravity(Gravity.CENTER_VERTICAL);
+            chips.setPadding(0, page.dp(8), 0, 0);
+
+            if (prepared.sourceType == LrclibModels.LyricsSource.LOCAL_WORD) {
+                chips.addView(page.chip(LrclibStrings.text(activity, "tag_word"), 0x26FA2D48, page.accent));
+            } else if (prepared.sourceType == LrclibModels.LyricsSource.LOCAL_LINE) {
+                chips.addView(page.chip(LrclibStrings.text(activity, "tag_synced"), 0x260A84FF, 0xFF0A84FF));
+            } else {
+                chips.addView(page.chip(LrclibStrings.text(activity, "tag_unsynced"), 0x268E8E93, page.secondary));
+            }
+
+            TextView metaTv = page.text(
+                    LrclibStrings.text(activity, "local_preview_meta", lineCount, decoded.charsetName),
+                    12, false, page.secondary);
+            metaTv.setPadding(page.dp(8), 0, 0, 0);
+            chips.addView(metaTv);
+            header.addView(chips);
+            content.addView(header, page.cardParams());
+
+            if (meta.hasSyncedTimestamps) {
+                LinearLayout modeCard = page.card();
+                page.addSwitchRow(
+                        modeCard,
+                        LrclibStrings.text(activity, "local_force_unsynced"),
+                        LrclibStrings.text(activity, "local_force_unsynced_summary"),
+                        forceUnsynced[0],
+                        checked -> {
+                            forceUnsynced[0] = checked;
+                            render[0].run();
+                        }
+                );
+                content.addView(modeCard, page.cardParams());
+            }
+
+            String previewBody = LocalLrcParser.formatPreviewText(decoded.text, forceUnsynced[0]);
+            if (previewBody.isEmpty()) previewBody = LrclibStrings.text(activity, "preview_empty");
+            TextView lyricsTv = page.text(previewBody, 15, false, page.primary);
+            lyricsTv.setLineSpacing(page.dp(4), 1f);
+            lyricsTv.setPadding(page.dp(4), page.dp(8), page.dp(4), page.dp(16));
+            lyricsTv.setTextIsSelectable(true);
+            content.addView(lyricsTv);
+        };
+
+        render[0].run();
+    }
+
+    // =========================================================================
     // 3. Full LRCLIB Settings Page
     // =========================================================================
 
@@ -523,6 +676,104 @@ final class LrclibUi {
                     }
             );
             content.addView(mainCard, page.cardParams());
+
+            // Local LRC folder & priority section
+            content.addView(page.sectionHeader(LrclibStrings.text(activity, "section_local")));
+            LinearLayout localFolderCard = page.card();
+            localFolderCard.addView(page.text(LrclibStrings.text(activity, "local_folder_title"), 15, true, page.primary));
+            boolean hasFolder = LrclibPrefs.hasLocalFolder(activity);
+            String folderSummary;
+            if (folderScanning) {
+                folderSummary = LrclibStrings.text(activity, "local_folder_scanning");
+            } else if (hasFolder) {
+                String label = LrclibPrefs.getLocalFolderLabel(activity);
+                if (label.isEmpty()) label = LrclibPrefs.getLocalFolderUri(activity);
+                folderSummary = LrclibStrings.text(
+                        activity, "local_folder_status", label, LrclibPrefs.getLocalFolderCount(activity));
+            } else {
+                folderSummary = LrclibStrings.text(activity, "local_folder_not_set");
+            }
+            TextView folderDescTv = page.text(folderSummary, 12, false, hasFolder ? page.accent : page.secondary);
+            folderDescTv.setPadding(0, page.dp(4), 0, page.dp(8));
+            folderDescTv.setLineSpacing(page.dp(2), 1f);
+            localFolderCard.addView(folderDescTv);
+
+            localFolderCard.addView(page.separator(), page.sepParams());
+            page.addActionRow(
+                    localFolderCard,
+                    LrclibStrings.text(activity, hasFolder ? "local_folder_change" : "local_folder_choose"),
+                    page.accent,
+                    () -> LrcPickerFragment.pickFolder(activity, (treeUri, displayLabel) -> {
+                        LrclibPrefs.setLocalFolder(activity, treeUri.toString(), displayLabel);
+                        rescanLocalFolder(activity, rebuild[0], true);
+                    })
+            );
+            if (hasFolder) {
+                localFolderCard.addView(page.separator(), page.sepParams());
+                page.addActionRow(
+                        localFolderCard,
+                        LrclibStrings.text(activity, "local_folder_rescan"),
+                        page.primary,
+                        () -> rescanLocalFolder(activity, rebuild[0], true)
+                );
+                localFolderCard.addView(page.separator(), page.sepParams());
+                page.addActionRow(
+                        localFolderCard,
+                        LrclibStrings.text(activity, "local_folder_clear"),
+                        page.secondary,
+                        () -> {
+                            LrclibPrefs.clearLocalFolder(activity);
+                            LrclibController.onLocalFolderChanged(activity);
+                            rebuild[0].run();
+                        }
+                );
+            }
+            content.addView(localFolderCard, page.cardParams());
+
+            LinearLayout localPriorityCard = page.card();
+            TextView localPrioHeader = page.text(LrclibStrings.text(activity, "local_priority_title"), 13, true, page.secondary);
+            localPrioHeader.setPadding(0, 0, 0, page.dp(6));
+            localPriorityCard.addView(localPrioHeader);
+            LrclibModels.LocalLrcPriority localPriority = LrclibPrefs.getLocalLrcPriority(activity);
+            page.addRadioRow(
+                    localPriorityCard,
+                    LrclibStrings.text(activity, "local_priority_prefer"),
+                    LrclibStrings.text(activity, "local_priority_prefer_desc"),
+                    localPriority == LrclibModels.LocalLrcPriority.PREFER_LOCAL,
+                    true,
+                    () -> {
+                        LrclibPrefs.setLocalLrcPriority(activity, LrclibModels.LocalLrcPriority.PREFER_LOCAL);
+                        LrclibController.clearResolvedStates();
+                        rebuild[0].run();
+                    }
+            );
+            localPriorityCard.addView(page.separator(), page.sepParams());
+            page.addRadioRow(
+                    localPriorityCard,
+                    LrclibStrings.text(activity, "local_priority_missing_unsynced"),
+                    LrclibStrings.text(activity, "local_priority_missing_unsynced_desc"),
+                    localPriority == LrclibModels.LocalLrcPriority.MISSING_AND_UNSYNCED,
+                    true,
+                    () -> {
+                        LrclibPrefs.setLocalLrcPriority(activity, LrclibModels.LocalLrcPriority.MISSING_AND_UNSYNCED);
+                        LrclibController.clearResolvedStates();
+                        rebuild[0].run();
+                    }
+            );
+            localPriorityCard.addView(page.separator(), page.sepParams());
+            page.addRadioRow(
+                    localPriorityCard,
+                    LrclibStrings.text(activity, "local_priority_missing_only"),
+                    LrclibStrings.text(activity, "local_priority_missing_only_desc"),
+                    localPriority == LrclibModels.LocalLrcPriority.MISSING_ONLY,
+                    true,
+                    () -> {
+                        LrclibPrefs.setLocalLrcPriority(activity, LrclibModels.LocalLrcPriority.MISSING_ONLY);
+                        LrclibController.clearResolvedStates();
+                        rebuild[0].run();
+                    }
+            );
+            content.addView(localPriorityCard, page.cardParams());
 
             // Lyrics priority section
             content.addView(page.sectionHeader(LrclibStrings.text(activity, "section_mode")));
@@ -733,7 +984,7 @@ final class LrclibUi {
                 remove.setBackground(page.ripple(null));
                 remove.setOnClickListener(v -> {
                     LrclibPrefs.removeOverride(activity, item.trackKey);
-                    LrclibController.refreshAllUi();
+                    LrclibController.clearResolvedStates();
                     if (onChanged != null) onChanged.run();
                     rebuild[0].run();
                 });
@@ -745,7 +996,7 @@ final class LrclibUi {
             TextView clearAll = page.button(LrclibStrings.text(activity, "clear_all_overrides"), false);
             clearAll.setOnClickListener(v -> {
                 LrclibPrefs.clearAllOverrides(activity);
-                LrclibController.refreshAllUi();
+                LrclibController.clearResolvedStates();
                 if (onChanged != null) onChanged.run();
                 rebuild[0].run();
             });
@@ -763,6 +1014,7 @@ final class LrclibUi {
 
     private static String describeCurrentState(Context ctx, LrclibController.TrackLyricsState state) {
         if (state == null) return LrclibStrings.text(ctx, "status_none");
+        String localName = state.localLabel.isEmpty() ? "lyrics.lrc" : state.localLabel;
         switch (state.source) {
             case OFFICIAL_WORD: return LrclibStrings.text(ctx, "status_official_word");
             case OFFICIAL_LINE: return LrclibStrings.text(ctx, "status_official_line");
@@ -771,6 +1023,12 @@ final class LrclibUi {
             case LRCLIB_LINE: return LrclibStrings.text(ctx, "status_lrclib_line", state.lrclibId);
             case LRCLIB_PLAIN: return LrclibStrings.text(ctx, "status_lrclib_plain", state.lrclibId);
             case LRCLIB_INSTRUMENTAL: return LrclibStrings.text(ctx, "status_lrclib_instrumental", state.lrclibId);
+            case LOCAL_WORD:
+                return LrclibStrings.text(ctx, state.localFromFolder ? "status_local_folder_word" : "status_local_word", localName);
+            case LOCAL_LINE:
+                return LrclibStrings.text(ctx, state.localFromFolder ? "status_local_folder_line" : "status_local_line", localName);
+            case LOCAL_PLAIN:
+                return LrclibStrings.text(ctx, state.localFromFolder ? "status_local_folder_plain" : "status_local_plain", localName);
             case LOADING_LRCLIB: return LrclibStrings.text(ctx, "status_loading");
             case NONE:
             default:
@@ -785,6 +1043,14 @@ final class LrclibUi {
             case FORCE_OFFICIAL: return LrclibStrings.text(ctx, "override_official");
             case FORCE_LRCLIB_AUTO: return LrclibStrings.text(ctx, "override_lrclib_auto");
             case FORCE_LRCLIB_ID: return LrclibStrings.text(ctx, "override_lrclib_pinned", ov.lrclibId);
+            case FORCE_LOCAL_LRC: {
+                String name = ov.localFileName.isEmpty() ? "lyrics.lrc" : ov.localFileName;
+                String base = LrclibStrings.text(ctx, "override_local_file", name);
+                if (ov.localForceUnsynced) {
+                    return base + " · " + LrclibStrings.text(ctx, "tag_unsynced");
+                }
+                return base;
+            }
             case AUTO:
             default: return LrclibStrings.text(ctx, "override_auto");
         }
@@ -1114,6 +1380,15 @@ final class LrclibUi {
             TextView tv = text(label, 15, true, filled ? Color.WHITE : accent);
             tv.setGravity(Gravity.CENTER);
             tv.setBackground(ripple(filled ? round(accent, 10) : null));
+            tv.setClickable(true);
+            tv.setFocusable(true);
+            return tv;
+        }
+
+        TextView secondaryButton(String label) {
+            TextView tv = text(label, 15, true, accent);
+            tv.setGravity(Gravity.CENTER);
+            tv.setBackground(ripple(round(cardFill, 10)));
             tv.setClickable(true);
             tv.setFocusable(true);
             return tv;

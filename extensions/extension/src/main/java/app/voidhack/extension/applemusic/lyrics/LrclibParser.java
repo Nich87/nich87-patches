@@ -17,11 +17,12 @@ import java.util.regex.Pattern;
 final class LrclibParser {
     static final String PRONUNCIATION_LANGUAGE = "und-Latn-x-lrclib";
     private static final Pattern LRC_LINE_TAGS = Pattern.compile(
-            "\\[(\\d{1,2}):(\\d{2})(?:[:.](\\d{1,3}))?(?::(\\d{2})(?:[:.](\\d{1,3}))?)?\\]");
+            "\\[(\\d{1,3}):(\\d{2})(?:[:.](\\d{1,3}))?(?::(\\d{2})(?:[:.](\\d{1,3}))?)?\\]");
     private static final Pattern LRC_OFFSET_TAG = Pattern.compile("(?i)^\\[offset\\s*:\\s*([+-]?\\d+)\\s*\\]$");
+    private static final Pattern LRC_LANG_TAG = Pattern.compile("(?i)^\\[(?:la|lang)\\s*:\\s*([^\\]]+)\\]$");
     private static final Pattern LRC_META_TAG = Pattern.compile("^\\[[a-zA-Z]{2,12}\\s*:.*\\]$");
     private static final Pattern ENHANCED_WORD_TAG = Pattern.compile(
-            "<(\\d{1,2}):(\\d{2})(?:[:.](\\d{1,3}))?(?::(\\d{2})(?:[:.](\\d{1,3}))?)?>");
+            "<(\\d{1,3}):(\\d{2})(?:[:.](\\d{1,3}))?(?::(\\d{2})(?:[:.](\\d{1,3}))?)?>");
 
     private LrclibParser() {}
 
@@ -217,7 +218,14 @@ final class LrclibParser {
         if (prepared.parsed == null || prepared.parsed.lines.isEmpty()) {
             return TtmlResult.none();
         }
-        return renderTtml(prepared.parsed, prepared.fallbackDurationMs, offsetMs, fallbackLang, romanizerFactory);
+        return renderTtml(
+                prepared.parsed,
+                prepared.fallbackDurationMs,
+                offsetMs,
+                fallbackLang,
+                romanizerFactory,
+                prepared.sourceType.isLocal()
+        );
     }
 
     static String formatPreviewText(LrclibModels.LyricsRecord record) {
@@ -457,6 +465,7 @@ final class LrclibParser {
         if (lrc == null || lrc.trim().isEmpty()) return null;
 
         int lrcOffsetMs = 0;
+        String language = null;
         List<RawLrcEntry> entries = new ArrayList<>();
         String[] rawLines = lrc.split("\\r?\\n");
         int order = 0;
@@ -468,6 +477,13 @@ final class LrclibParser {
             Matcher offsetMatcher = LRC_OFFSET_TAG.matcher(trimmed);
             if (offsetMatcher.matches()) {
                 lrcOffsetMs = parseIntSafe(offsetMatcher.group(1), 0);
+                continue;
+            }
+
+            Matcher langMatcher = LRC_LANG_TAG.matcher(trimmed);
+            if (langMatcher.matches()) {
+                String val = langMatcher.group(1).trim();
+                if (!val.isEmpty() && language == null) language = val;
                 continue;
             }
 
@@ -515,17 +531,20 @@ final class LrclibParser {
         List<LyricLine> lines = new ArrayList<>();
         for (int i = 0; i < entries.size(); i++) {
             RawLrcEntry entry = entries.get(i);
-            String stripped = stripEnhancedTags(entry.rawText).trim();
+            String stripped = stripInlineTimestampTags(entry.rawText).trim();
             if (stripped.isEmpty()) {
                 // Empty timestamped line serves purely as the end boundary for the preceding line.
                 continue;
             }
 
-            int endMs = -1;
-            for (int j = i + 1; j < entries.size(); j++) {
-                if (entries.get(j).startMs > entry.startMs) {
-                    endMs = entries.get(j).startMs;
-                    break;
+            int explicitEndMs = extractTrailingEndMs(entry.rawText, lrcOffsetMs);
+            int endMs = explicitEndMs > entry.startMs ? explicitEndMs : -1;
+            if (endMs <= entry.startMs) {
+                for (int j = i + 1; j < entries.size(); j++) {
+                    if (entries.get(j).startMs > entry.startMs) {
+                        endMs = entries.get(j).startMs;
+                        break;
+                    }
                 }
             }
             if (endMs <= entry.startMs) {
@@ -537,8 +556,12 @@ final class LrclibParser {
             }
 
             List<WordSpan> words = Collections.emptyList();
-            if (allowEnhancedWords && ENHANCED_WORD_TAG.matcher(entry.rawText).find()) {
-                words = parseEnhancedWords(entry.rawText, entry.startMs, endMs, lrcOffsetMs);
+            if (allowEnhancedWords) {
+                if (ENHANCED_WORD_TAG.matcher(entry.rawText).find()) {
+                    words = parseInlineWordTags(entry.rawText, ENHANCED_WORD_TAG, entry.startMs, endMs, lrcOffsetMs);
+                } else if (hasInlineWordBracketTags(entry.rawText)) {
+                    words = parseInlineWordTags(entry.rawText, LRC_LINE_TAGS, entry.startMs, endMs, lrcOffsetMs);
+                }
                 if (!words.isEmpty()) anyWordTiming = true;
             }
 
@@ -546,7 +569,7 @@ final class LrclibParser {
         }
 
         if (lines.isEmpty()) return null;
-        return new ParsedLyrics(anyWordTiming ? TimingType.WORD : TimingType.LINE, null, fallbackDurationMs, lines);
+        return new ParsedLyrics(anyWordTiming ? TimingType.WORD : TimingType.LINE, language, fallbackDurationMs, lines);
     }
 
     static ParsedLyrics parsePlain(String plain, int fallbackDurationMs) {
@@ -585,6 +608,16 @@ final class LrclibParser {
             int offsetMs,
             String fallbackLang,
             BiFunction<String, String, UnaryOperator<String>> romanizerFactory) {
+        return renderTtml(parsed, fallbackDurationMs, offsetMs, fallbackLang, romanizerFactory, false);
+    }
+
+    private static TtmlResult renderTtml(
+            ParsedLyrics parsed,
+            int fallbackDurationMs,
+            int offsetMs,
+            String fallbackLang,
+            BiFunction<String, String, UnaryOperator<String>> romanizerFactory,
+            boolean isLocalSource) {
         Pronunciations pronunciations = new Pronunciations(parsed, romanizerFactory);
         String lang = parsed.language != null && !parsed.language.trim().isEmpty()
                 ? parsed.language.trim()
@@ -618,7 +651,13 @@ final class LrclibParser {
                 pronunciations.writeTo(sb);
                 ttml = sb.toString();
             }
-            return new TtmlResult(ttml, baseTtml, LrclibModels.LyricsSource.LRCLIB_PLAIN, keyIndex - 1, false);
+            return new TtmlResult(
+                    ttml,
+                    baseTtml,
+                    isLocalSource ? LrclibModels.LyricsSource.LOCAL_PLAIN : LrclibModels.LyricsSource.LRCLIB_PLAIN,
+                    keyIndex - 1,
+                    false
+            );
         }
 
         // Shift timestamps by offsetMs and enforce strict monotonic invariants for TTMLParser.
@@ -686,10 +725,16 @@ final class LrclibParser {
             pronunciations.writeTo(sb);
             ttml = sb.toString();
         }
+        LrclibModels.LyricsSource sourceType;
+        if (isLocalSource) {
+            sourceType = isWord ? LrclibModels.LyricsSource.LOCAL_WORD : LrclibModels.LyricsSource.LOCAL_LINE;
+        } else {
+            sourceType = isWord ? LrclibModels.LyricsSource.LRCLIB_WORD : LrclibModels.LyricsSource.LRCLIB_LINE;
+        }
         return new TtmlResult(
                 ttml,
                 baseTtml,
-                isWord ? LrclibModels.LyricsSource.LRCLIB_WORD : LrclibModels.LyricsSource.LRCLIB_LINE,
+                sourceType,
                 emitted,
                 isWord
         );
@@ -885,8 +930,9 @@ final class LrclibParser {
         return String.format(Locale.ROOT, "%02d:%02d.%03d", minutes, seconds, millis);
     }
 
-    private static List<WordSpan> parseEnhancedWords(String rawText, int lineStartMs, int lineEndMs, int lrcOffsetMs) {
-        Matcher m = ENHANCED_WORD_TAG.matcher(rawText);
+    private static List<WordSpan> parseInlineWordTags(
+            String rawText, Pattern tagPattern, int lineStartMs, int lineEndMs, int lrcOffsetMs) {
+        Matcher m = tagPattern.matcher(rawText);
         List<int[]> tagRanges = new ArrayList<>();
         List<Integer> tagTimes = new ArrayList<>();
         while (m.find()) {
@@ -917,9 +963,57 @@ final class LrclibParser {
         return spans;
     }
 
-    private static String stripEnhancedTags(String text) {
-        if (text == null || text.indexOf('<') < 0) return text == null ? "" : text;
-        return ENHANCED_WORD_TAG.matcher(text).replaceAll("");
+    private static boolean hasInlineWordBracketTags(String rawText) {
+        if (rawText == null || rawText.indexOf('[') < 0) return false;
+        Matcher m = LRC_LINE_TAGS.matcher(rawText);
+        while (m.find()) {
+            String after = rawText.substring(m.end());
+            if (!stripInlineTimestampTags(after).trim().isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static int extractTrailingEndMs(String rawText, int lrcOffsetMs) {
+        if (rawText == null || rawText.isEmpty()) return -1;
+        String trimmed = rawText.trim();
+        if (trimmed.endsWith("]")) {
+            Matcher m = LRC_LINE_TAGS.matcher(trimmed);
+            int lastEnd = -1;
+            int lastTs = -1;
+            while (m.find()) {
+                lastEnd = m.end();
+                lastTs = parseLrcTimestamp(m);
+            }
+            if (lastEnd == trimmed.length() && lastTs >= 0) {
+                return Math.max(0, lastTs - lrcOffsetMs);
+            }
+        } else if (trimmed.endsWith(">")) {
+            Matcher m = ENHANCED_WORD_TAG.matcher(trimmed);
+            int lastEnd = -1;
+            int lastTs = -1;
+            while (m.find()) {
+                lastEnd = m.end();
+                lastTs = parseLrcTimestamp(m);
+            }
+            if (lastEnd == trimmed.length() && lastTs >= 0) {
+                return Math.max(0, lastTs - lrcOffsetMs);
+            }
+        }
+        return -1;
+    }
+
+    private static String stripInlineTimestampTags(String text) {
+        if (text == null) return "";
+        String out = text;
+        if (out.indexOf('<') >= 0) {
+            out = ENHANCED_WORD_TAG.matcher(out).replaceAll("");
+        }
+        if (out.indexOf('[') >= 0) {
+            out = LRC_LINE_TAGS.matcher(out).replaceAll("");
+        }
+        return out;
     }
 
     private static int parseLrcTimestamp(Matcher m) {

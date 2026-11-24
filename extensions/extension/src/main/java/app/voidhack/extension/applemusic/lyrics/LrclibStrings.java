@@ -40,6 +40,7 @@ final class LrclibStrings {
             case "badge_short": return "LRC";
             case "pill_official": return "Official";
             case "pill_lrclib": return "LRCLIB";
+            case "pill_local": return "Local LRC";
             case "pill_loading": return "LRCLIB…";
             case "pill_search": return "Search LRCLIB";
             case "instrumental_message": return "Instrumental track (LRCLIB)";

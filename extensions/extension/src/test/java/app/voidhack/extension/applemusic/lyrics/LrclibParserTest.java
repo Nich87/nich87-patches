@@ -287,4 +287,17 @@ public final class LrclibParserTest {
         assertEquals(LrclibModels.LyricsSource.LRCLIB_INSTRUMENTAL, res.sourceType);
         assertNull(res.ttml);
     }
+
+    @Test
+    public void parsesTrailingEndTimestampInStandardLrc() {
+        String lrc = "[00:10.00]First line[00:14.25]\n"
+                + "[00:20.00]Second line[00:24.50]\n";
+        LrclibModels.LyricsRecord rec = new LrclibModels.LyricsRecord(
+                9L, "Trail", "Artist", "", 40.0, false, false, null, lrc, null);
+        LrclibParser.TtmlResult res = LrclibParser.buildTtml(rec, 40, true, true, 0, "en");
+        assertEquals(LrclibModels.LyricsSource.LRCLIB_LINE, res.sourceType);
+        assertEquals(2, res.lineCount);
+        assertTrue(res.ttml.contains("<p begin=\"00:10.000\" end=\"00:14.250\" ttm:agent=\"v1\" itunes:key=\"L1\">First line</p>"));
+        assertTrue(res.ttml.contains("<p begin=\"00:20.000\" end=\"00:24.500\" ttm:agent=\"v1\" itunes:key=\"L2\">Second line</p>"));
+    }
 }

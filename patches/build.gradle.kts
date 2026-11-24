@@ -65,6 +65,7 @@ tasks.named<JavaCompile>("compileTestJava") {
     })
     source(project(":extensions:extension").fileTree("src/main/java/app/voidhack/extension/applemusic/lyrics") {
         include("LrclibModels.java", "LrclibMatcher.java", "LrclibParser.java", "LrclibApiClient.java",
+            "LocalLrcParser.java", "LocalLrcMatcher.java",
             "OfficialLyricsTtml.java", "LyricsEditTtml.java", "TimedPronunciation.java")
     })
     source(project(":extensions:extension").fileTree("src/main/java/app/voidhack/extension/applemusic/font") {
