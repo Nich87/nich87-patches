@@ -73,6 +73,9 @@ tasks.named<JavaCompile>("compileTestJava") {
     source(project(":extensions:extension").fileTree("src/main/java/app/voidhack/extension/twitter/spaces/mute") {
         include("SpaceLocalMuteLogic.java")
     })
+    source(project(":extensions:sing-runtime").fileTree("src/main/java/app/voidhack/extension/applemusic/sing") {
+        include("SingBackendPolicy.java", "StereoResampler.java", "MdxSpectrum.java")
+    })
 }
 
 tasks {

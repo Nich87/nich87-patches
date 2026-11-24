@@ -115,12 +115,25 @@ Ultimate Vocal Remover and its core developers Anjok07 and aufr33 provide the
 model under MIT terms. The downloaded file is verified against the SHA-256 of
 the original release's `UVR_MDXNET_3_9662.onnx`. [UVR license and credits](https://github.com/Anjok07/ultimatevocalremovergui#license)
 
-Separation runs on the device CPU for stereo PCM at 32, 44.1, 48, 88.2, 96,
-176.4 and 192 kHz. The model receives a 44.1 kHz copy of the decoded audio.
-The estimated vocals are converted back to the original sample rate before
-mixing, so playback retains its original rate and frame count. The first
-processed audio requires a window of approximately 5.92 seconds. Other
-formats use the app's normal audio path.
+Separation runs on-device for stereo PCM at 32, 44.1, 48, 88.2, 96, 176.4 and
+192 kHz. On first model preparation, calibration prefers GPU-free low-load CPU
+(2 threads at `nice +6`, escalating to 4 threads if needed) whenever CPU
+inference comfortably meets real-time, avoiding shared mobile GPU contention
+with `SurfaceFlinger` and system UI rendering. Only when CPU alone exceeds the
+real-time budget does Android 10+ probe hardware accelerators (NNAPI FP16 with
+CPU disabled, then WebGPU over Vulkan batched with `maxNumPendingDispatches=16`
+and capped at 1.2 s) against the CPU reference output, caching the verified
+backend per OS build, blocking accelerators that fail or crash natively, and
+falling back to CPU at runtime on failure. Memory pattern allocation is disabled
+to avoid duplicate large buffers while keeping the CPU/NNAPI arena warm during
+playback to prevent per-window page-fault stalls. Playback paces output frames
+against decoded input to preserve lookahead pipelining across 1024/1536-frame
+decoder chunks, seamlessly streams original audio if an inference window ever
+runs late, and pauses inference when the mix remains at `Original mix`. The model
+receives a 44.1 kHz copy of the decoded audio. The estimated vocals are
+converted back to the original sample rate before mixing, so playback retains
+its original rate and frame count. The first processed audio requires a window
+of approximately 5.92 seconds. Other formats use the app's normal audio path.
 
 ### Liquid Glass rendering
 

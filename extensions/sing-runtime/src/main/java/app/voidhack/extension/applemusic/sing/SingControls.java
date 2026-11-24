@@ -24,12 +24,15 @@ import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 public final class SingControls {
     private static final String BUTTON_TAG = "app.voidhack.sing.controls";
     private static final int PLAYER_PLATTER = 0x2effffff;
     private static final int PLAYER_FOREGROUND = 0xf0ffffff;
     private static final int SHEET_SURFACE = 0xf0262528;
     private static final int SYMBOL_ON_FILL = 0xff29272b;
+    private static final ConcurrentHashMap<String, Integer> RESOURCE_IDS = new ConcurrentHashMap<>();
     private static boolean preparationFailed;
 
     private SingControls() {}
@@ -84,6 +87,10 @@ public final class SingControls {
         private final Runnable refreshPanel = this::refreshPanel;
         private PopupWindow popup;
         private Panel panel;
+        private boolean buttonSynced;
+        private int lastMix;
+        private boolean lastSelected;
+        private float lastButtonAlpha = Float.NaN;
 
         Control(FrameLayout slot, View controls, View nativeVocal, View loading, int icon,
                 PlayerControls playerControls) {
@@ -147,13 +154,24 @@ public final class SingControls {
 
         private void syncButton() {
             int mix = SingPlayback.mix();
-            button.setSelected(SingPlayback.streamSupported() && mix != 0);
-            String description = mixLabel(mix);
-            if (!TextUtils.equals(button.getStateDescription(), description)) {
-                button.setStateDescription(description);
-            }
+            boolean selected = SingPlayback.streamSupported() && mix != 0;
             float alpha = panel == Panel.MIX && popup != null ? 0f : 1f;
-            if (button.getAlpha() != alpha) button.setAlpha(alpha);
+            if (!buttonSynced || selected != lastSelected) {
+                button.setSelected(selected);
+                lastSelected = selected;
+            }
+            if (!buttonSynced || mix != lastMix) {
+                String description = mixLabel(mix);
+                if (!TextUtils.equals(button.getStateDescription(), description)) {
+                    button.setStateDescription(description);
+                }
+                lastMix = mix;
+            }
+            if (!buttonSynced || alpha != lastButtonAlpha) {
+                if (button.getAlpha() != alpha) button.setAlpha(alpha);
+                lastButtonAlpha = alpha;
+            }
+            buttonSynced = true;
         }
 
         private void togglePanel() {
@@ -426,7 +444,12 @@ public final class SingControls {
     }
 
     private static int resource(Context context, String type, String name) {
-        return context.getResources().getIdentifier(name, type, context.getPackageName());
+        String key = type + "/" + name;
+        Integer cached = RESOURCE_IDS.get(key);
+        if (cached != null) return cached;
+        int id = context.getResources().getIdentifier(name, type, context.getPackageName());
+        if (id != 0) RESOURCE_IDS.put(key, id);
+        return id;
     }
 
     private static int color(Context context, String name, int fallback) {
