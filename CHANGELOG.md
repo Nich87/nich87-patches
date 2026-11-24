@@ -1,3 +1,16 @@
+## [1.7.0](https://github.com/Nich87/nich87-patches/compare/v1.6.0...v1.7.0) (2026-11-24)
+
+### ✨ New Features
+
+* Add on-device pronunciation guides and lyric line editing ([bfa4517](https://github.com/Nich87/nich87-patches/commit/bfa45176a6f33731faf3dcaee18f0b2731d74563))
+* Optimize vocal separation backend selection, pacing, and responsiveness ([b0e9f47](https://github.com/Nich87/nich87-patches/commit/b0e9f4774ab9824ef9df65b76386fc62f957fc34))
+* Support Apple Music 7.0.0-7.0.2 in vocal separation ([5d98aeb](https://github.com/Nich87/nich87-patches/commit/5d98aeb7d0af1a8af020a44998746fe25c67e3b6))
+* Support Dolby Atmos and multichannel PCM in vocal separation ([775854d](https://github.com/Nich87/nich87-patches/commit/775854d55c85d064342fff9838fe3c13c8c31bd6))
+
+### 🐛 Bug Fixes
+
+* Keep lyrics player controls visible while preparing vocal model ([e64b64c](https://github.com/Nich87/nich87-patches/commit/e64b64c49dbecc821b8af96354064fe9244cb4b2))
+
 ## [1.7.0-dev.1](https://github.com/Nich87/nich87-patches/compare/v1.6.0...v1.7.0-dev.1) (2026-11-24)
 
 ### ✨ New Features
