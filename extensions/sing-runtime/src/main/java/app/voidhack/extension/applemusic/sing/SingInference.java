@@ -158,6 +158,47 @@ final class SingInference implements AutoCloseable {
         }
     }
 
+    /**
+     * Runs one MDX-Net inference pass and returns both the input STFT and the estimated vocal STFT
+     * so multichannel surround/Atmos streams can mask every channel without extra neural passes.
+     */
+    synchronized void separateSpectrum(float[] stereoPcm, float[] mixSpecOut, float[] vocalSpecOut)
+            throws IOException, OrtException {
+        if (closed) {
+            throw new IllegalStateException("Vocal separation session is closed");
+        }
+        spectrum.forward(stereoPcm, mixSpecOut);
+        try {
+            runSpectrumAndValidate(mixSpecOut, vocalSpecOut);
+        } catch (IOException | OrtException | RuntimeException failure) {
+            if (!activeBackend.isHardwareAccelerator()) {
+                throw failure;
+            }
+            boolean nonFinite = failure instanceof NonFiniteOutputException;
+            Log.w(TAG, "Hardware vocal backend " + activeBackend.id()
+                    + " failed during multichannel inference; falling back to CPU", failure);
+            fallbackToCpu(nonFinite);
+            runSpectrumAndValidate(mixSpecOut, vocalSpecOut);
+        }
+    }
+
+    private void runSpectrumAndValidate(float[] mixSpec, float[] vocalSpecOut) throws IOException, OrtException {
+        inputBuffer.position(0);
+        inputBuffer.put(mixSpec);
+        try (OrtSession.Result result = session.run(inputs, outputs)) {
+            if (result.size() != 1) {
+                throw new IOException("Unexpected vocal model output");
+            }
+            outputBuffer.position(0);
+            outputBuffer.get(vocalSpecOut);
+        }
+        for (float value : vocalSpecOut) {
+            if (Float.isNaN(value) || Float.isInfinite(value)) {
+                throw new NonFiniteOutputException("Vocal model produced a non-finite spectral bin");
+            }
+        }
+    }
+
     private void runAndValidate(float[] vocals) throws IOException, OrtException {
         inputBuffer.position(0);
         inputBuffer.put(features);

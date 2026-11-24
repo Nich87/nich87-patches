@@ -115,8 +115,16 @@ Ultimate Vocal Remover and its core developers Anjok07 and aufr33 provide the
 model under MIT terms. The downloaded file is verified against the SHA-256 of
 the original release's `UVR_MDXNET_3_9662.onnx`. [UVR license and credits](https://github.com/Anjok07/ultimatevocalremovergui#license)
 
-Separation runs on-device for stereo PCM at 32, 44.1, 48, 88.2, 96, 176.4 and
-192 kHz. On first model preparation, calibration prefers GPU-free low-load CPU
+Separation runs on-device for decoded PCM (mono, stereo, and multichannel
+surround / Dolby Atmos up to 24 channels, including 5.1, 7.1, 5.1.4 and 7.1.4)
+at 24, 32, 44.1, 48, 88.2, 96, 176.4 and 192 kHz. For Dolby Atmos
+(`audio/eac3-joc`) and Dolby Audio (`audio/eac3`, `audio/ac3`, `audio/ac4`)
+played through `SVMediaCodecAudioRenderer`, encoded bitstream passthrough is
+bypassed when the device provides a platform `MediaCodec` decoder so decoded
+PCM flows through `SingAudioProcessor`; multichannel streams run one MDX-Net
+pass on the stereo downmix and apply per-bin Wiener masks to all audible
+non-LFE channels (skipping silent channels) to preserve spatial placement and
+subwoofer bass without extra neural inference passes. On first model preparation, calibration prefers GPU-free low-load CPU
 (2 threads at `nice +6`, escalating to 4 threads if needed) whenever CPU
 inference comfortably meets real-time, avoiding shared mobile GPU contention
 with `SurfaceFlinger` and system UI rendering. Only when CPU alone exceeds the

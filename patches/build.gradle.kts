@@ -74,7 +74,7 @@ tasks.named<JavaCompile>("compileTestJava") {
         include("SpaceLocalMuteLogic.java")
     })
     source(project(":extensions:sing-runtime").fileTree("src/main/java/app/voidhack/extension/applemusic/sing") {
-        include("SingBackendPolicy.java", "StereoResampler.java", "MdxSpectrum.java")
+        include("SingBackendPolicy.java", "StereoResampler.java", "MdxSpectrum.java", "MultichannelMixer.java")
     })
 }
 

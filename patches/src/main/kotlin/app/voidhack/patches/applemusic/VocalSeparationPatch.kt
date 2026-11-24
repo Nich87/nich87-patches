@@ -17,12 +17,16 @@ import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
+import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 
 private const val RENDERER = "Lcom/apple/android/music/playback/renderer/SVAudioRendererV2;"
+private const val MEDIACODEC_RENDERER = "Lcom/apple/android/music/playback/renderer/SVMediaCodecAudioRenderer;"
+private const val BASE_MEDIACODEC_RENDERER = "Lcom/google/android/exoplayer2/audio/MediaCodecAudioRenderer;"
 private const val AUDIO_SINK = "Lcom/google/android/exoplayer2/audio/DefaultAudioSink;"
 private const val AUDIO_PROCESSORS = "[Lcom/google/android/exoplayer2/audio/AudioProcessor;"
 private const val SING_PROCESSOR = "Lapp/voidhack/extension/applemusic/sing/SingAudioProcessor;"
@@ -75,10 +79,27 @@ private object PlaybackSinkConstructor : Fingerprint(
     returnType = "V",
 )
 
+private object MediaCodecRendererConstructor : Fingerprint(
+    definingClass = MEDIACODEC_RENDERER,
+    name = "<init>",
+    parameters = listOf(
+        "Landroid/content/Context;",
+        "Lcom/google/android/exoplayer2/mediacodec/MediaCodecSelector;",
+        "Landroid/os/Handler;",
+        "Lcom/google/android/exoplayer2/audio/AudioRendererEventListener;",
+        "Lcom/google/android/exoplayer2/appleextersion/DecryptoProxyWrapper;",
+        "Lcom/google/android/exoplayer2/drm/appledrm/DrmManager;",
+        "Lcom/google/android/exoplayer2/audio/AudioCapabilities;",
+        "Z",
+        AUDIO_PROCESSORS,
+    ),
+    returnType = "V",
+)
+
 @Suppress("unused")
 val vocalSeparationPatch = bytecodePatch(
     name = "On-device vocal separation",
-    description = "Adds a vocal and accompaniment mix slider to the lyrics screen. Requires a one-time model download and compatible stereo playback.",
+    description = "Adds a vocal and accompaniment mix slider to the lyrics screen. Supports stereo and Dolby Atmos PCM after a one-time model download.",
     default = false,
 ) {
     compatibleWith(
@@ -116,6 +137,43 @@ val vocalSeparationPatch = bytecodePatch(
                 invoke-static {v0}, $SING_PROCESSOR->appendTo($AUDIO_PROCESSORS)$AUDIO_PROCESSORS
                 move-result-object v0
                 return-object v0
+            """,
+        )
+
+        val mediaCodecInit = MediaCodecRendererConstructor.method
+        val castIndex = mediaCodecInit.instructions.indexOfFirst { instruction ->
+            instruction.opcode == Opcode.CHECK_CAST &&
+                ((instruction as? ReferenceInstruction)?.reference as? TypeReference)?.type == AUDIO_PROCESSORS
+        }
+        check(castIndex >= 0) { "Missing AudioProcessor[] cast in SVMediaCodecAudioRenderer.<init>." }
+        val processorArrayReg = (mediaCodecInit.getInstruction(castIndex) as OneRegisterInstruction).registerA
+        mediaCodecInit.addInstructionsWithLabels(
+            castIndex + 1,
+            """
+                invoke-static {v$processorArrayReg}, $SING_PROCESSOR->appendTo($AUDIO_PROCESSORS)$AUDIO_PROCESSORS
+                move-result-object v$processorArrayReg
+            """,
+        )
+
+        val mediaCodecClass = MediaCodecRendererConstructor.classDef
+        check(mediaCodecClass.methods.none { it.name == "allowPassthrough" }) {
+            "Unexpected existing allowPassthrough override in SVMediaCodecAudioRenderer."
+        }
+        mediaCodecClass.addSingMethod(
+            name = "allowPassthrough",
+            parameters = listOf("I", "Ljava/lang/String;"),
+            returnType = "Z",
+            registers = 4,
+            body = """
+                invoke-static {p2}, $PLAYBACK->shouldAllowPassthrough(Ljava/lang/String;)Z
+                move-result v0
+                if-nez v0, :native
+                const/4 v0, 0x0
+                return v0
+                :native
+                invoke-super {p0, p1, p2}, $BASE_MEDIACODEC_RENDERER->allowPassthrough(ILjava/lang/String;)Z
+                move-result v0
+                return v0
             """,
         )
 
