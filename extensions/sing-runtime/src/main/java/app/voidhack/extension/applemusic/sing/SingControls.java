@@ -67,7 +67,7 @@ public final class SingControls {
         View button = root.findViewWithTag(BUTTON_TAG);
         return button != null && button.getParent() instanceof View slot
                 && slot.getTag() instanceof Control control
-                && control.panel == Panel.MIX && control.popup != null && control.popup.isShowing();
+                && (SingPlayback.isPreparing() || control.keepsControlsVisible());
     }
 
     private enum Panel { MIX, SETUP, PREPARING, ERROR, FORMAT }
@@ -192,8 +192,13 @@ public final class SingControls {
             else slot.postDelayed(refreshPanel, 400);
         }
 
+        private boolean keepsControlsVisible() {
+            return (panel == Panel.MIX || panel == Panel.PREPARING)
+                    && popup != null && popup.isShowing();
+        }
+
         private void openPanel(Panel mode) {
-            closePanel();
+            closePanel(false);
             if (!slot.isAttachedToWindow() || slot.getVisibility() != View.VISIBLE) return;
             View root = slot.getRootView();
             int gap = mode == Panel.MIX ? 0 : dp(context, 8);
@@ -220,7 +225,9 @@ public final class SingControls {
             popup = window;
             int offset = mode == Panel.MIX ? -height : -height - button.getHeight() - gap;
             window.showAsDropDown(button, 0, offset, Gravity.END);
-            if (mode == Panel.MIX && playerControls != null) playerControls.voidhackShowControls();
+            if ((mode == Panel.MIX || mode == Panel.PREPARING) && playerControls != null) {
+                playerControls.voidhackShowControls();
+            }
             syncButton();
 
             content.setPivotX(slot.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL
@@ -245,11 +252,11 @@ public final class SingControls {
         }
 
         private void releasePanel(boolean resumeFade) {
-            boolean wasMixer = panel == Panel.MIX;
+            boolean heldFade = panel == Panel.MIX || panel == Panel.PREPARING;
             popup = null;
             panel = null;
             slot.removeCallbacks(refreshPanel);
-            if (wasMixer && resumeFade && playerControls != null) {
+            if (heldFade && resumeFade && playerControls != null && !SingPlayback.isPreparing()) {
                 playerControls.voidhackResumeControlsFade();
             }
             syncButton();
@@ -381,10 +388,14 @@ public final class SingControls {
         private void prepareModel() {
             if (SingPlayback.isPreparing()) return;
             preparationFailed = false;
+            if (playerControls != null) playerControls.voidhackShowControls();
             SingPlayback.prepare(context, error -> {
                 preparationFailed = error != null;
                 slot.removeCallbacks(refreshPanel);
                 refreshPanel();
+                if (slot.isAttachedToWindow() && playerControls != null && !keepsControlsVisible()) {
+                    playerControls.voidhackResumeControlsFade();
+                }
             });
             openPanel(Panel.PREPARING);
         }
