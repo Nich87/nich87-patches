@@ -32,6 +32,7 @@ final class LrclibPrefs {
     private static final String KEY_ENABLED = "enabled";
     private static final String KEY_FALLBACK_MODE = "fallback_mode";
     private static final String KEY_WORD_SYNC = "word_sync";
+    private static final String KEY_ROMANIZATION = "romanization";
     private static final String KEY_ALLOW_PLAIN = "allow_plain";
     private static final String KEY_SEARCH_FALLBACK = "search_fallback";
     private static final String KEY_DEFAULT_OFFSET_MS = "default_offset_ms";
@@ -90,6 +91,14 @@ final class LrclibPrefs {
 
     static void setWordSyncEnabled(Context context, boolean value) {
         prefs(context).edit().putBoolean(KEY_WORD_SYNC, value).apply();
+    }
+
+    static boolean isRomanizationEnabled(Context context) {
+        return prefs(context).getBoolean(KEY_ROMANIZATION, false);
+    }
+
+    static void setRomanizationEnabled(Context context, boolean value) {
+        prefs(context).edit().putBoolean(KEY_ROMANIZATION, value).apply();
     }
 
     static boolean isAllowPlainEnabled(Context context) {

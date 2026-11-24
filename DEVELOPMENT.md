@@ -78,6 +78,30 @@ patches. Each patch can be selected independently.
 Android 13+ provides live refraction. Older versions retain the native blur;
 that fallback has not been verified on a device.
 
+### Lyrics pronunciation
+
+Turn on **Generate pronunciation guide** in the LRCLIB settings, then select
+**Show Pronunciation** in Apple Music's playback lyrics controls. This works
+with synced and unsynced Apple Music, custom and LRCLIB lyrics. Apple Music's
+existing pronunciation guides take precedence. The patch generates missing
+readings on-device using Kuromoji IPADIC for Japanese and Android ICU for
+supported scripts. For Japanese lyrics containing kanji, download the 13.3 MB
+Kuromoji IPADIC dictionary once from the LRCLIB settings. The app verifies the
+archive's SHA-256 and reads the dictionary entries from app-private storage.
+Subsequent Japanese readings work offline.
+Readings are approximate, especially for names and
+unusual spellings. The original lyrics and their timing are preserved.
+In word-synced Japanese lyrics, generated readings appear on a separate row
+and highlight at the corresponding source timings. A reading that spans
+multiple source segments uses their combined interval. If the reading cannot
+be aligned, its whole row highlights with the active line. The pronunciation
+menu shows the source of the guide.
+
+Long-press a lyric line to edit its text or pronunciation. The app stores
+changes locally for the exact lyric source and line. Restore Original removes
+that line's changes. A text edit in word-synced lyrics uses the original
+line interval, and the rest of the song keeps its existing timings.
+
 ### On-device vocal separation
 
 Enable `On-device vocal separation` for a merged arm64 Apple Music 7.0.3

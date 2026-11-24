@@ -14,6 +14,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
@@ -42,6 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 final class LrclibUi {
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
+    private static boolean dictionaryDownloading;
     private static final ExecutorService UI_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "VoidhackLrclibUi");
         t.setDaemon(true);
@@ -49,6 +51,34 @@ final class LrclibUi {
     });
 
     private LrclibUi() {}
+
+    private static void downloadDictionary(Activity activity, Runnable rebuild) {
+        if (dictionaryDownloading) return;
+        dictionaryDownloading = true;
+        rebuild.run();
+        Context context = activity.getApplicationContext();
+        UI_EXECUTOR.execute(() -> {
+            boolean installed;
+            try {
+                KuromojiDictionary.install(context);
+                installed = true;
+            } catch (IOException e) {
+                Log.w("AppleMusicLrclib", "Could not install the Japanese lyrics dictionary", e);
+                installed = false;
+            }
+            boolean success = installed;
+            MAIN.post(() -> {
+                dictionaryDownloading = false;
+                if (success) {
+                    LrclibController.reloadCurrentTrack(context, null, false);
+                } else {
+                    Toast.makeText(context, LrclibStrings.text(context, "dictionary_download_failed"),
+                            Toast.LENGTH_LONG).show();
+                }
+                if (!activity.isDestroyed()) rebuild.run();
+            });
+        });
+    }
 
     // =========================================================================
     // 1. Quick Lyrics Source & Override Sheet
@@ -548,6 +578,27 @@ final class LrclibUi {
                     LrclibPrefs.isWordSyncEnabled(activity),
                     checked -> LrclibPrefs.setWordSyncEnabled(activity, checked)
             );
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                playbackCard.addView(page.separator(), page.sepParams());
+                page.addSwitchRow(
+                        playbackCard,
+                        LrclibStrings.text(activity, "romanization"),
+                        LrclibStrings.text(activity, "romanization_summary"),
+                        LrclibPrefs.isRomanizationEnabled(activity),
+                        checked -> {
+                            LrclibPrefs.setRomanizationEnabled(activity, checked);
+                            LrclibController.reloadCurrentTrack(activity, null, false);
+                        }
+                );
+                playbackCard.addView(page.separator(), page.sepParams());
+                if (dictionaryDownloading || KuromojiDictionary.isInstalled(activity)) {
+                    String status = dictionaryDownloading ? "dictionary_downloading" : "dictionary_installed";
+                    playbackCard.addView(page.text(LrclibStrings.text(activity, status), 15, false, page.secondary));
+                } else {
+                    page.addActionRow(playbackCard, LrclibStrings.text(activity, "dictionary_download"), page.accent,
+                            () -> downloadDictionary(activity, rebuild[0]));
+                }
+            }
             playbackCard.addView(page.separator(), page.sepParams());
             page.addSwitchRow(
                     playbackCard,
