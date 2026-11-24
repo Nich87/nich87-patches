@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.BiFunction;
+import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -13,6 +15,7 @@ import java.util.regex.Pattern;
  * plus serializer to Apple Music TTML XML compatible with libandroidappmusic.so TTMLParser.
  */
 final class LrclibParser {
+    static final String PRONUNCIATION_LANGUAGE = "und-Latn-x-lrclib";
     private static final Pattern LRC_LINE_TAGS = Pattern.compile(
             "\\[(\\d{1,2}):(\\d{2})(?:[:.](\\d{1,3}))?(?::(\\d{2})(?:[:.](\\d{1,3}))?)?\\]");
     private static final Pattern LRC_OFFSET_TAG = Pattern.compile("(?i)^\\[offset\\s*:\\s*([+-]?\\d+)\\s*\\]$");
@@ -70,21 +73,44 @@ final class LrclibParser {
         }
     }
 
+    static final class PreparedRecord {
+        final ParsedLyrics parsed;
+        final int fallbackDurationMs;
+        final LrclibModels.LyricsSource sourceType;
+
+        PreparedRecord(ParsedLyrics parsed, int fallbackDurationMs, LrclibModels.LyricsSource sourceType) {
+            this.parsed = parsed;
+            this.fallbackDurationMs = fallbackDurationMs;
+            this.sourceType = sourceType;
+        }
+    }
+
     static final class TtmlResult {
         final String ttml;
+        final String baseTtml;
         final LrclibModels.LyricsSource sourceType;
         final int lineCount;
         final boolean hasWordTiming;
 
         TtmlResult(String ttml, LrclibModels.LyricsSource sourceType, int lineCount, boolean hasWordTiming) {
+            this(ttml, ttml, sourceType, lineCount, hasWordTiming);
+        }
+
+        TtmlResult(
+                String ttml,
+                String baseTtml,
+                LrclibModels.LyricsSource sourceType,
+                int lineCount,
+                boolean hasWordTiming) {
             this.ttml = ttml;
+            this.baseTtml = baseTtml;
             this.sourceType = sourceType;
             this.lineCount = lineCount;
             this.hasWordTiming = hasWordTiming;
         }
 
         static TtmlResult none() {
-            return new TtmlResult(null, LrclibModels.LyricsSource.NONE, 0, false);
+            return new TtmlResult(null, null, LrclibModels.LyricsSource.NONE, 0, false);
         }
     }
 
@@ -95,9 +121,32 @@ final class LrclibParser {
             boolean allowPlain,
             int offsetMs,
             String fallbackLang) {
-        if (record == null) return TtmlResult.none();
+        return buildTtml(record, trackDurationSec, allowWordSync, allowPlain, offsetMs, fallbackLang, null);
+    }
+
+    static TtmlResult buildTtml(
+            LrclibModels.LyricsRecord record,
+            int trackDurationSec,
+            boolean allowWordSync,
+            boolean allowPlain,
+            int offsetMs,
+            String fallbackLang,
+            BiFunction<String, String, UnaryOperator<String>> romanizerFactory) {
+        return renderPrepared(
+                prepareRecord(record, trackDurationSec, allowWordSync, allowPlain),
+                offsetMs, fallbackLang, romanizerFactory);
+    }
+
+    static PreparedRecord prepareRecord(
+            LrclibModels.LyricsRecord record,
+            int trackDurationSec,
+            boolean allowWordSync,
+            boolean allowPlain) {
+        if (record == null) {
+            return new PreparedRecord(null, 0, LrclibModels.LyricsSource.NONE);
+        }
         if (record.instrumental) {
-            return new TtmlResult(null, LrclibModels.LyricsSource.LRCLIB_INSTRUMENTAL, 0, false);
+            return new PreparedRecord(null, 0, LrclibModels.LyricsSource.LRCLIB_INSTRUMENTAL);
         }
 
         int fallbackDurationMs = trackDurationSec > 0
@@ -140,10 +189,35 @@ final class LrclibParser {
         }
 
         if (parsed == null || parsed.lines.isEmpty()) {
-            return TtmlResult.none();
+            return new PreparedRecord(null, fallbackDurationMs, LrclibModels.LyricsSource.NONE);
         }
 
-        return renderTtml(parsed, fallbackDurationMs, offsetMs, fallbackLang);
+        LrclibModels.LyricsSource sourceType;
+        if (parsed.timing == TimingType.WORD) {
+            sourceType = LrclibModels.LyricsSource.LRCLIB_WORD;
+        } else if (parsed.timing == TimingType.LINE) {
+            sourceType = LrclibModels.LyricsSource.LRCLIB_LINE;
+        } else {
+            sourceType = LrclibModels.LyricsSource.LRCLIB_PLAIN;
+        }
+        return new PreparedRecord(parsed, fallbackDurationMs, sourceType);
+    }
+
+    static TtmlResult renderPrepared(
+            PreparedRecord prepared,
+            int offsetMs,
+            String fallbackLang,
+            BiFunction<String, String, UnaryOperator<String>> romanizerFactory) {
+        if (prepared == null || prepared.sourceType == LrclibModels.LyricsSource.NONE) {
+            return TtmlResult.none();
+        }
+        if (prepared.sourceType == LrclibModels.LyricsSource.LRCLIB_INSTRUMENTAL) {
+            return new TtmlResult(null, null, LrclibModels.LyricsSource.LRCLIB_INSTRUMENTAL, 0, false);
+        }
+        if (prepared.parsed == null || prepared.parsed.lines.isEmpty()) {
+            return TtmlResult.none();
+        }
+        return renderTtml(prepared.parsed, prepared.fallbackDurationMs, offsetMs, fallbackLang, romanizerFactory);
     }
 
     static String formatPreviewText(LrclibModels.LyricsRecord record) {
@@ -175,6 +249,14 @@ final class LrclibParser {
             }
         }
         return "";
+    }
+
+    static String buildCustomLyricsTtml(
+            String lyrics, int durationSec, String fallbackLang,
+            BiFunction<String, String, UnaryOperator<String>> romanizerFactory) {
+        int durationMs = durationSec * 1000;
+        ParsedLyrics parsed = parsePlain(lyrics, durationMs);
+        return parsed == null ? null : renderTtml(parsed, durationMs, 0, fallbackLang, romanizerFactory).ttml;
     }
 
     static ParsedLyrics parseLyricsfile(String yaml, int fallbackDurationMs) {
@@ -501,7 +583,9 @@ final class LrclibParser {
             ParsedLyrics parsed,
             int fallbackDurationMs,
             int offsetMs,
-            String fallbackLang) {
+            String fallbackLang,
+            BiFunction<String, String, UnaryOperator<String>> romanizerFactory) {
+        Pronunciations pronunciations = new Pronunciations(parsed, romanizerFactory);
         String lang = parsed.language != null && !parsed.language.trim().isEmpty()
                 ? parsed.language.trim()
                 : (fallbackLang != null && !fallbackLang.trim().isEmpty() ? fallbackLang.trim() : "und");
@@ -520,6 +604,7 @@ final class LrclibParser {
                     sb.append("<div>");
                     currentSection = line.sectionIndex;
                 }
+                pronunciations.add(keyIndex, cleanText, null, null);
                 sb.append("<p ttm:agent=\"v1\" itunes:key=\"L").append(keyIndex++).append("\">")
                         .append(escapeXml(cleanText))
                         .append("</p>");
@@ -527,7 +612,13 @@ final class LrclibParser {
             if (currentSection >= 0) sb.append("</div>");
             sb.append("</body></tt>");
             if (keyIndex == 1) return TtmlResult.none();
-            return new TtmlResult(sb.toString(), LrclibModels.LyricsSource.LRCLIB_PLAIN, keyIndex - 1, false);
+            String baseTtml = sb.toString();
+            String ttml = baseTtml;
+            if (pronunciations.hasReading()) {
+                pronunciations.writeTo(sb);
+                ttml = sb.toString();
+            }
+            return new TtmlResult(ttml, baseTtml, LrclibModels.LyricsSource.LRCLIB_PLAIN, keyIndex - 1, false);
         }
 
         // Shift timestamps by offsetMs and enforce strict monotonic invariants for TTMLParser.
@@ -563,9 +654,12 @@ final class LrclibParser {
         int emitted = 0;
         for (LyricLine line : shifted) {
             if (isWord) {
-                String spansXml = renderWordSpansXml(line);
+                TimedSource timedSource = pronunciations.romanize instanceof TimedPronunciation.Romanizer
+                        ? new TimedSource() : null;
+                String spansXml = renderWordSpansXml(line, timedSource);
                 if (spansXml.isEmpty()) continue;
                 emitted++;
+                pronunciations.add(emitted, line.text, line, timedSource);
                 sb.append("<p begin=\"").append(formatTtmlTime(line.startMs))
                         .append("\" end=\"").append(formatTtmlTime(line.endMs))
                         .append("\" ttm:agent=\"v1\" itunes:key=\"L").append(emitted).append("\">")
@@ -575,6 +669,7 @@ final class LrclibParser {
                 String cleanText = sanitizeXmlText(line.text).trim();
                 if (cleanText.isEmpty()) continue;
                 emitted++;
+                pronunciations.add(emitted, cleanText, null, null);
                 sb.append("<p begin=\"").append(formatTtmlTime(line.startMs))
                         .append("\" end=\"").append(formatTtmlTime(line.endMs))
                         .append("\" ttm:agent=\"v1\" itunes:key=\"L").append(emitted).append("\">")
@@ -585,12 +680,97 @@ final class LrclibParser {
 
         sb.append("</div></body></tt>");
         if (emitted == 0) return TtmlResult.none();
+        String baseTtml = sb.toString();
+        String ttml = baseTtml;
+        if (pronunciations.hasReading()) {
+            pronunciations.writeTo(sb);
+            ttml = sb.toString();
+        }
         return new TtmlResult(
-                sb.toString(),
+                ttml,
+                baseTtml,
                 isWord ? LrclibModels.LyricsSource.LRCLIB_WORD : LrclibModels.LyricsSource.LRCLIB_LINE,
                 emitted,
                 isWord
         );
+    }
+
+    private static final class Pronunciations {
+        private final UnaryOperator<String> romanize;
+        private final StringBuilder entries = new StringBuilder();
+        private boolean hasReading;
+
+        Pronunciations(ParsedLyrics lyrics, BiFunction<String, String, UnaryOperator<String>> factory) {
+            if (factory == null) {
+                romanize = null;
+                return;
+            }
+            StringBuilder text = new StringBuilder();
+            for (LyricLine line : lyrics.lines) {
+                text.append(line.text).append('\n');
+            }
+            romanize = factory.apply(lyrics.language, text.toString());
+        }
+
+        void add(int lineKey, String text, LyricLine wordTimedLine, TimedSource timedSource) {
+            if (romanize == null) return;
+            String source = timedSource == null ? null : timedSource.text.toString();
+            List<TimedPronunciation.SourceSpan> spans = source != null && source.equals(text.trim())
+                    ? timedSource.spans : Collections.emptyList();
+            TimedPronunciation.Reading guide = TimedPronunciation.read(romanize, text.trim(), spans);
+            String reading = guide == null ? "" : sanitizeXmlText(guide.text).trim();
+            if (reading.equals(text.trim())) reading = "";
+            hasReading |= !reading.isEmpty();
+            // Leave a matching entry for lines that need no pronunciation guide.
+            entries.append("<text for=\"L").append(lineKey).append('"');
+            if (reading.isEmpty() && wordTimedLine == null) {
+                entries.append("/>");
+                return;
+            }
+            entries.append('>');
+            if (wordTimedLine == null) {
+                entries.append(escapeXml(reading));
+            } else if (!reading.isEmpty() && !guide.words.isEmpty()) {
+                for (int i = 0; i < guide.words.size(); i++) {
+                    if (i > 0) entries.append(' ');
+                    TimedPronunciation.Word word = guide.words.get(i);
+                    appendTimedReading(word.text, word.beginTime, word.endTime);
+                }
+            } else {
+                appendTimedReading(reading, formatTtmlTime(wordTimedLine.startMs), formatTtmlTime(wordTimedLine.endMs));
+            }
+            entries.append("</text>");
+        }
+
+        private void appendTimedReading(String reading, String begin, String end) {
+            entries.append("<span begin=\"").append(begin).append("\" end=\"").append(end).append("\">")
+                    .append(escapeXml(sanitizeXmlText(reading))).append("</span>");
+        }
+
+        boolean hasReading() {
+            return hasReading;
+        }
+
+        void writeTo(StringBuilder ttml) {
+            if (!hasReading) return;
+            String metadata = "<iTunesMetadata xmlns=\"http://music.apple.com/lyric-ttml-internal\">"
+                    + "<transliterations><transliteration xml:lang=\"" + PRONUNCIATION_LANGUAGE
+                    + "\" automaticallyCreated=\"true\">"
+                    + entries
+                    + "</transliteration></transliterations></iTunesMetadata>";
+            ttml.insert(ttml.indexOf("</metadata>"), metadata);
+        }
+    }
+
+    private static final class TimedSource {
+        final StringBuilder text = new StringBuilder();
+        final List<TimedPronunciation.SourceSpan> spans = new ArrayList<>();
+
+        void add(String word, String begin, String end) {
+            int start = text.length();
+            text.append(word);
+            spans.add(new TimedPronunciation.SourceSpan(start, text.length(), begin, end));
+        }
     }
 
     private static List<WordSpan> normalizeWordSpans(LyricLine line, int lineStart, int lineEnd, int offsetMs) {
@@ -631,7 +811,7 @@ final class LrclibParser {
      * Renders word spans keeping leading/trailing spaces OUTSIDE {@code <span>} elements
      * so Apple Music's native LyricsLineParser preserves word spacing and never sees whitespace-only spans.
      */
-    private static String renderWordSpansXml(LyricLine line) {
+    private static String renderWordSpansXml(LyricLine line, TimedSource timedSource) {
         StringBuilder sb = new StringBuilder();
         boolean emittedAnySpan = false;
         StringBuilder pendingSpace = new StringBuilder();
@@ -658,12 +838,16 @@ final class LrclibParser {
 
             if (emittedAnySpan && (firstNonSpace > 0 || pendingSpace.length() > 0)) {
                 sb.append(' ');
+                if (timedSource != null) timedSource.text.append(' ');
             }
             pendingSpace.setLength(0);
 
             String core = text.substring(firstNonSpace, lastNonSpace + 1);
-            sb.append("<span begin=\"").append(formatTtmlTime(span.startMs))
-                    .append("\" end=\"").append(formatTtmlTime(span.endMs))
+            String begin = formatTtmlTime(span.startMs);
+            String end = formatTtmlTime(span.endMs);
+            if (timedSource != null) timedSource.add(core, begin, end);
+            sb.append("<span begin=\"").append(begin)
+                    .append("\" end=\"").append(end)
                     .append("\">")
                     .append(escapeXml(core))
                     .append("</span>");

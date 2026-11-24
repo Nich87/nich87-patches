@@ -161,7 +161,7 @@ public final class LrclibController {
         return appContext;
     }
 
-    static void captureContext(Context ctx) {
+    public static void captureContext(Context ctx) {
         if (ctx != null && appContext == null) {
             appContext = ctx.getApplicationContext();
         }
@@ -231,20 +231,23 @@ public final class LrclibController {
         lastTrackQuery = query;
 
         Context ctx = appContext;
-        if (ctx == null || !LrclibPrefs.isEnabled(ctx)) {
-            return false;
-        }
-
-        // Check one-shot bypass when PREFER_LRCLIB fell back to Apple Music official lyrics.
-        String bypassKey = vmBypassOfficialTrack.remove(viewModel);
-        if (query.trackKey.equals(bypassKey)) {
-            return false;
-        }
+        if (ctx == null) return false;
 
         long gen = nextGeneration(viewModel);
-        LrclibModels.TrackOverride override = LrclibPrefs.getOverride(ctx, query.trackKey);
+        boolean lrclibEnabled = LrclibPrefs.isEnabled(ctx);
+        boolean bypassLrclib = query.trackKey.equals(vmBypassOfficialTrack.remove(viewModel));
+        LrclibModels.TrackOverride override = lrclibEnabled ? LrclibPrefs.getOverride(ctx, query.trackKey) : null;
         LrclibModels.FallbackMode globalMode = LrclibPrefs.getFallbackMode(ctx);
         LrclibModels.OverrideMode ovMode = override != null ? override.mode : LrclibModels.OverrideMode.AUTO;
+        boolean useCustomLyrics = !lrclibEnabled || bypassLrclib
+                || ovMode == LrclibModels.OverrideMode.FORCE_OFFICIAL
+                || (ovMode == LrclibModels.OverrideMode.AUTO
+                    && globalMode != LrclibModels.FallbackMode.PREFER_LRCLIB);
+        if (useCustomLyrics && !query.hasOfficialLyrics
+                && loadCustomLyrics(ctx, viewModel, playbackItem, query)) {
+            return true;
+        }
+        if (!lrclibEnabled || bypassLrclib) return false;
 
         if (ovMode == LrclibModels.OverrideMode.FORCE_OFFICIAL) {
             if (!query.hasOfficialLyrics && !query.hasCustomLyrics) {
@@ -288,6 +291,17 @@ public final class LrclibController {
     // Hook 3: PlayerLyricsViewModel$f emit interception
     // -------------------------------------------------------------------------
 
+    public static Object prepareNativeLyrics(Object viewModel, Object songInfoPtr) {
+        Context ctx = appContext;
+        if (ctx == null || songInfoPtr == null) return songInfoPtr;
+        LrclibModels.TrackQuery query = LrclibReflection.extractTrackQuery(vmPlaybackItems.get(viewModel));
+        if (query == null || LrclibReflection.getSongInfoAdamId(songInfoPtr) != effectiveAdamId(query)) {
+            return songInfoPtr;
+        }
+        return OfficialLyricsPronunciation.prepare(ctx, query.trackKey, songInfoPtr,
+                LrclibReflection.getCurrentSystemLyricsLanguage(viewModel));
+    }
+
     public static boolean onNativeLyricsResult(Object viewModel, Object songInfoPtr, Throwable error) {
         if (viewModel == null) return false;
         if (appContext == null) {
@@ -299,6 +313,9 @@ public final class LrclibController {
         if (query == null) return false;
 
         Context ctx = appContext;
+        if (ctx != null && songInfoPtr == null && loadCustomLyrics(ctx, viewModel, playbackItem, query)) {
+            return true;
+        }
         if (ctx == null || !LrclibPrefs.isEnabled(ctx)) {
             recordOfficialState(query.trackKey, songInfoPtr);
             return false;
@@ -327,7 +344,8 @@ public final class LrclibController {
         }
 
         long timing = LrclibReflection.getSongInfoTiming(songInfoPtr);
-        if (timing == 0L && mode == LrclibModels.FallbackMode.MISSING_AND_UNSYNCED) {
+        if (timing == 0L && mode == LrclibModels.FallbackMode.MISSING_AND_UNSYNCED
+                && !(LrclibPrefs.isRomanizationEnabled(ctx) && OfficialLyricsPronunciation.hasOfficialReading(songInfoPtr))) {
             // Official lyrics are static/unsynced; try upgrading to synced LRCLIB lyrics.
             long gen = nextGeneration(viewModel);
             setTrackState(query.trackKey, LrclibModels.LyricsSource.LOADING_LRCLIB, -1L, false);
@@ -337,6 +355,38 @@ public final class LrclibController {
 
         recordOfficialState(query.trackKey, songInfoPtr);
         return false;
+    }
+
+    private static boolean loadCustomLyrics(
+            Context ctx, Object viewModel, Object playbackItem, LrclibModels.TrackQuery query) {
+        if (!query.hasCustomLyrics) return false;
+        String lyrics = LrclibReflection.getCustomLyrics(playbackItem);
+        if (lyrics == null || lyrics.trim().isEmpty()) return false;
+
+        long gen = nextGeneration(viewModel);
+        EXECUTOR.execute(() -> {
+            if (!isCurrentGen(viewModel, gen)) return;
+            String sysLang = LrclibReflection.getCurrentSystemLyricsLanguage(viewModel);
+            long adamId = effectiveAdamId(query);
+            String ttml = LrclibParser.buildCustomLyricsTtml(lyrics, query.durationSec, sysLang, null);
+            String lyricsId = "custom:" + adamId;
+            LyricsLineEditor.Sheet sheet = LyricsLineEditor.prepare(
+                    ctx, query.trackKey, "custom", lyrics, ttml, null, false, false);
+            Object songInfoPtr = LrclibReflection.parseTtmlToSongInfoPtr(
+                    sheet.displayed, adamId, query.queueId, lyricsId, sysLang);
+            if (songInfoPtr == null && sheet.displayed != ttml) {
+                songInfoPtr = LrclibReflection.parseTtmlToSongInfoPtr(ttml, adamId, query.queueId, lyricsId, sysLang);
+                sheet = sheet.withDisplay(ttml);
+            }
+            LyricsLineEditor.remember(songInfoPtr, sheet);
+            Object result = songInfoPtr;
+            MAIN.post(() -> {
+                if (!isCurrentGen(viewModel, gen)) return;
+                setTrackState(query.trackKey, LrclibModels.LyricsSource.OFFICIAL_STATIC, -1L, false);
+                LrclibReflection.emitLyricsToViewModel(viewModel, result, null);
+            });
+        });
+        return true;
     }
 
     // -------------------------------------------------------------------------
@@ -370,6 +420,7 @@ public final class LrclibController {
 
     public static void onLyricsRendered(Object fragment, Object songInfoPtr) {
         if (fragment == null) return;
+        LyricsLineEditor.bind(fragment, songInfoPtr);
         Activity act = LrclibReflection.getActivity(fragment);
         if (act != null) captureContext(act);
         Object vm = LrclibReflection.getLyricsViewModelFromFragment(fragment);
@@ -386,6 +437,14 @@ public final class LrclibController {
             refreshPillForFragment(fragment);
             refreshAllBadgesNow();
         });
+    }
+
+    public static boolean onEditTimedLyric(Object fragment, View anchor, Object nativeLine, Runnable share) {
+        return LyricsLineEditor.onTimedLineHeld(fragment, anchor, nativeLine, share);
+    }
+
+    public static boolean onEditStaticLyric(Object fragment, View anchor, int displayedLyricLine) {
+        return LyricsLineEditor.onStaticLineHeld(fragment, anchor, displayedLyricLine);
     }
 
     // -------------------------------------------------------------------------
@@ -657,7 +716,7 @@ public final class LrclibController {
                 }
             }
             if (!isCurrentGen(viewModel, gen)) return;
-            deliverLrclibRecord(ctx, viewModel, playbackItem, query, record, null, null, false, rateLimited);
+            deliverLrclibRecord(ctx, viewModel, playbackItem, query, gen, record, null, null, false, rateLimited);
         });
     }
 
@@ -707,7 +766,7 @@ public final class LrclibController {
 
             if (!isCurrentGen(viewModel, gen)) return;
             deliverLrclibRecord(
-                    ctx, viewModel, playbackItem, query, record,
+                    ctx, viewModel, playbackItem, query, gen, record,
                     fallbackOfficialPtr, fallbackError, fallbackToOfficialLoadOnMiss, rateLimited
             );
         });
@@ -718,6 +777,7 @@ public final class LrclibController {
             final Object viewModel,
             final Object playbackItem,
             final LrclibModels.TrackQuery query,
+            final long gen,
             final LrclibModels.LyricsRecord record,
             final Object fallbackOfficialPtr,
             final Throwable fallbackError,
@@ -728,45 +788,65 @@ public final class LrclibController {
         int offsetMs = computeEffectiveOffsetMs(ctx, query.trackKey);
         String sysLang = LrclibReflection.getCurrentSystemLyricsLanguage(viewModel);
 
-        LrclibParser.TtmlResult built = LrclibParser.buildTtml(
-                record, query.durationSec, allowWord, allowPlain, offsetMs, sysLang
-        );
+        LrclibParser.PreparedRecord prepared = LrclibParser.prepareRecord(
+                record, query.durationSec, allowWord, allowPlain);
 
         // If we required synced lyrics to upgrade official static lyrics, ignore non-synced LRCLIB results.
-        if (fallbackOfficialPtr != null
-                && built.sourceType != LrclibModels.LyricsSource.LRCLIB_WORD
-                && built.sourceType != LrclibModels.LyricsSource.LRCLIB_LINE) {
-            built = LrclibParser.TtmlResult.none();
-        }
+        boolean rejectedPlainUpgrade = fallbackOfficialPtr != null
+                && prepared.sourceType != LrclibModels.LyricsSource.LRCLIB_WORD
+                && prepared.sourceType != LrclibModels.LyricsSource.LRCLIB_LINE;
 
-        if (built.sourceType == LrclibModels.LyricsSource.LRCLIB_INSTRUMENTAL && record != null) {
+        if (!rejectedPlainUpgrade
+                && prepared.sourceType == LrclibModels.LyricsSource.LRCLIB_INSTRUMENTAL
+                && record != null) {
             MAIN.post(() -> {
+                if (!isCurrentGen(viewModel, gen)) return;
                 setTrackState(query.trackKey, LrclibModels.LyricsSource.LRCLIB_INSTRUMENTAL, record.id, false);
                 LrclibReflection.emitLyricsToViewModel(viewModel, null, null);
             });
             return;
         }
 
-        if (built.ttml != null && record != null) {
+        if (!rejectedPlainUpgrade && prepared.parsed != null && record != null) {
             long adamId = effectiveAdamId(query);
             String lyricsId = LRCLIB_LYRICS_ID_PREFIX + record.id;
-            final Object songInfoPtr = LrclibReflection.parseTtmlToSongInfoPtr(
-                    built.ttml, adamId, query.queueId, lyricsId, sysLang
-            );
-            if (songInfoPtr != null) {
-                final LrclibModels.LyricsSource finalSource = built.sourceType;
-                MAIN.post(() -> {
-                    setTrackState(query.trackKey, finalSource, record.id, false);
-                    LrclibReflection.emitLyricsToViewModel(viewModel, songInfoPtr, null);
-                });
-                return;
+            String sourceLyrics = record.lyricsfile + "\u0000" + record.syncedLyrics + "\u0000" + record.plainLyrics;
+            String documentKey = LyricsEdits.documentKey(query.trackKey, lyricsId + ":" + prepared.sourceType, sourceLyrics);
+            Map<Integer, LyricsEditTtml.Edit> edits = LyricsEdits.load(ctx, documentKey);
+            boolean generateInParser = LrclibPrefs.isRomanizationEnabled(ctx) && !LyricsLineEditor.hasTextEdits(edits);
+            LrclibParser.TtmlResult built = LrclibParser.renderPrepared(
+                    prepared, offsetMs, sysLang, generateInParser ? LrclibRomanizer::create : null);
+            if (built.ttml != null) {
+                LyricsLineEditor.Sheet sheet = LyricsLineEditor.prepare(
+                        ctx, query.trackKey, documentKey, edits,
+                        built.baseTtml, generateInParser ? built.ttml : null,
+                        built.sourceType == LrclibModels.LyricsSource.LRCLIB_WORD, false);
+                Object parsed = LrclibReflection.parseTtmlToSongInfoPtr(
+                        sheet.displayed, adamId, query.queueId, lyricsId, sysLang);
+                if (parsed == null && !sheet.displayed.equals(built.baseTtml)) {
+                    parsed = LrclibReflection.parseTtmlToSongInfoPtr(
+                            built.baseTtml, adamId, query.queueId, lyricsId, sysLang);
+                    sheet = sheet.withDisplay(built.baseTtml);
+                }
+                final Object songInfoPtr = parsed;
+                if (songInfoPtr != null) {
+                    LyricsLineEditor.remember(songInfoPtr, sheet);
+                    final LrclibModels.LyricsSource finalSource = built.sourceType;
+                    MAIN.post(() -> {
+                        if (!isCurrentGen(viewModel, gen)) return;
+                        setTrackState(query.trackKey, finalSource, record.id, false);
+                        LrclibReflection.emitLyricsToViewModel(viewModel, songInfoPtr, null);
+                    });
+                    return;
+                }
+                Log.w(TAG, "Native TTMLParser rejected generated TTML for LRCLIB #" + record.id);
             }
-            Log.w(TAG, "Native TTMLParser rejected generated TTML for LRCLIB #" + record.id);
         }
 
         // LRCLIB miss or parse failure -> handle graceful fallback.
         if (fallbackOfficialPtr != null) {
             MAIN.post(() -> {
+                if (!isCurrentGen(viewModel, gen)) return;
                 recordOfficialState(query.trackKey, fallbackOfficialPtr);
                 LrclibReflection.emitLyricsToViewModel(viewModel, fallbackOfficialPtr, null);
             });
@@ -775,6 +855,7 @@ public final class LrclibController {
 
         if (fallbackToOfficialLoadOnMiss && (query.hasOfficialLyrics || query.hasCustomLyrics)) {
             MAIN.post(() -> {
+                if (!isCurrentGen(viewModel, gen)) return;
                 vmBypassOfficialTrack.put(viewModel, query.trackKey);
                 LrclibReflection.callLoadLyrics(viewModel, playbackItem);
             });
@@ -782,6 +863,7 @@ public final class LrclibController {
         }
 
         MAIN.post(() -> {
+            if (!isCurrentGen(viewModel, gen)) return;
             setTrackState(query.trackKey, LrclibModels.LyricsSource.NONE, -1L, rateLimited);
             LrclibReflection.emitLyricsToViewModel(viewModel, null, fallbackError);
         });
