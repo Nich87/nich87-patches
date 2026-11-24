@@ -3,6 +3,7 @@ package app.voidhack.patches.applemusic
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
+import app.morphe.patcher.extensions.InstructionExtensions.instructions
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.AppTarget
 import app.morphe.patcher.patch.Compatibility
@@ -10,11 +11,14 @@ import app.morphe.patcher.patch.SupportedAbi
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableClass
+import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
 import app.morphe.patcher.util.smali.ExternalLabel
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 
@@ -84,6 +88,9 @@ val vocalSeparationPatch = bytecodePatch(
             apkFileType = appleMusicCompatibility.apkFileType,
             appIconColor = appleMusicCompatibility.appIconColor,
             targets = listOf(
+                AppTarget(version = "7.0.0", versionCodes = mapOf(SupportedAbi.ARM64_V8A to 1614)),
+                AppTarget(version = "7.0.1", versionCodes = mapOf(SupportedAbi.ARM64_V8A to 1622)),
+                AppTarget(version = "7.0.2", versionCodes = mapOf(SupportedAbi.ARM64_V8A to 1624)),
                 AppTarget(version = "7.0.3", versionCodes = mapOf(SupportedAbi.ARM64_V8A to 1626)),
             ),
         ),
@@ -138,9 +145,38 @@ val vocalSeparationPatch = bytecodePatch(
 
         val lyrics = mutableClassDefBy(LYRICS)
         val parent = checkNotNull(lyrics.superclass)
-        lyrics.bindSingControlsFade(parent)
+        val parentClass = mutableClassDefBy(parent)
+        val setControlsVisibility = parentClass.methods.single {
+            it.parameterTypes == listOf("I", "[I") && it.returnType == "V"
+        }
+        val cancelFadeTimer = parentClass.methods.single {
+            it.parameterTypes.isEmpty() && it.returnType == "V" &&
+                it.callsMethod("Landroid/os/Handler;", "removeMessages")
+        }
+        val scheduleFadeTimer = parentClass.methods.single {
+            it.parameterTypes.isEmpty() && it.returnType == "V" &&
+                it.callsMethod("Landroid/os/Handler;", "obtainMessage")
+        }
+        lyrics.bindSingControlsFade(setControlsVisibility, cancelFadeTimer, scheduleFadeTimer)
 
-        val timer = mutableClassDefBy(parent.removeSuffix(";") + "\$b;")
+        val timerPrefix = parent.removeSuffix(";") + "\$"
+        val timerTypes = mutableListOf<String>()
+        classDefForEach { clazz ->
+            if (!clazz.type.startsWith(timerPrefix) || !clazz.interfaces.contains("Ljava/lang/Runnable;")) {
+                return@classDefForEach
+            }
+            val runsHide = clazz.methods.any { method ->
+                method.name == "run" && method.parameterTypes.isEmpty() && method.returnType == "V" &&
+                    method.implementation?.instructions?.any { instruction ->
+                        val ref = (instruction as? ReferenceInstruction)?.reference as? MethodReference
+                        ref?.definingClass == parent && ref.name == setControlsVisibility.name &&
+                            ref.parameterTypes == setControlsVisibility.parameterTypes &&
+                            ref.returnType == setControlsVisibility.returnType
+                    } == true
+            }
+            if (runsHide) timerTypes.add(clazz.type)
+        }
+        val timer = mutableClassDefBy(timerTypes.single())
         val owner = timer.instanceFields.single { it.type == parent }
         val hideControls = timer.methods.single {
             it.name == "run" && it.parameterTypes.isEmpty() && it.returnType == "V"
@@ -175,7 +211,17 @@ val vocalSeparationPatch = bytecodePatch(
     }
 }
 
-private fun MutableClass.bindSingControlsFade(parent: String) {
+private fun MutableMethod.callsMethod(definingClass: String, name: String): Boolean =
+    implementation != null && instructions.any { instruction ->
+        val ref = (instruction as? ReferenceInstruction)?.reference as? MethodReference
+        ref?.definingClass == definingClass && ref.name == name
+    }
+
+private fun MutableClass.bindSingControlsFade(
+    setControlsVisibility: MutableMethod,
+    cancelFadeTimer: MutableMethod,
+    scheduleFadeTimer: MutableMethod,
+) {
     interfaces.add(PLAYER_CONTROLS)
     addSingMethod(
         name = "voidhackShowControls",
@@ -183,11 +229,11 @@ private fun MutableClass.bindSingControlsFade(parent: String) {
         returnType = "V",
         registers = 3,
         body = """
-            invoke-virtual {p0}, $parent->O1()V
+            invoke-virtual {p0}, $cancelFadeTimer
             const/4 v0, 0x0
             filled-new-array {v0}, [I
             move-result-object v1
-            invoke-virtual {p0, v0, v1}, $parent->N1(I[I)V
+            invoke-virtual {p0, v0, v1}, $setControlsVisibility
             return-void
         """,
     )
@@ -197,8 +243,8 @@ private fun MutableClass.bindSingControlsFade(parent: String) {
         returnType = "V",
         registers = 1,
         body = """
-            invoke-virtual {p0}, $parent->O1()V
-            invoke-virtual {p0}, $parent->a2()V
+            invoke-virtual {p0}, $cancelFadeTimer
+            invoke-virtual {p0}, $scheduleFadeTimer
             return-void
         """,
     )

@@ -104,8 +104,9 @@ line interval, and the rest of the song keeps its existing timings.
 
 ### On-device vocal separation
 
-Enable `On-device vocal separation` for a merged arm64 Apple Music 7.0.3
-(1626) APK. Tap the microphone above the lyrics screen's playback controls.
+Enable `On-device vocal separation` for a merged arm64 Apple Music 7.0.0
+(1614), 7.0.1 (1622), 7.0.2 (1624), or 7.0.3 (1626) APK. Tap the microphone
+above the lyrics screen's playback controls.
 Select `Prepare model` to download the approximately 30 MB UVR-MDX-NET 3 model.
 After preparation, drag the vertical slider between accompaniment, the
 original mix and isolated vocals.
