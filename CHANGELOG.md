@@ -1,3 +1,9 @@
+## [1.8.0-dev.1](https://github.com/Nich87/nich87-patches/compare/v1.7.0...v1.8.0-dev.1) (2026-11-24)
+
+### ✨ New Features
+
+* Support synced and unsynced local LRC files in LRCLIB lyrics ([f13f4d3](https://github.com/Nich87/nich87-patches/commit/f13f4d3c58770ed4cbaaa62fc16a3b8df509e24b))
+
 ## [1.7.0](https://github.com/Nich87/nich87-patches/compare/v1.6.0...v1.7.0) (2026-11-24)
 
 ### ✨ New Features
