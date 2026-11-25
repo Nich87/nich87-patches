@@ -249,10 +249,12 @@ final class LrclibUi {
             localCtaParams.setMargins(0, page.dp(6), 0, page.dp(4));
             content.addView(localBtn, localCtaParams);
 
-            // Full-song Lyrics Editor CTA + edited lines review (whenever lyrics are loaded)
+            // Full-song Lyrics Editor CTA + edited lines review (only when Lyrics editor patch is active)
             LyricsLineEditor.Sheet activeSheet = LyricsLineEditor.getActiveSheet(fragment, query.trackKey);
-            List<LyricsEditTtml.EditedLine> editedLines = LyricsLineEditor.listEditedLines(activity, activeSheet);
-            if (activeSheet != null && activeSheet.displayed != null && !activeSheet.displayed.isEmpty()) {
+            List<LyricsEditTtml.EditedLine> editedLines = LyricsFeatures.editor()
+                    ? LyricsLineEditor.listEditedLines(activity, activeSheet)
+                    : java.util.Collections.emptyList();
+            if (LyricsFeatures.editor() && activeSheet != null && activeSheet.displayed != null && !activeSheet.displayed.isEmpty()) {
                 TextView editorBtn = page.secondaryButton(LrclibStrings.text(activity, "open_lyrics_editor_action"));
                 editorBtn.setOnClickListener(v -> LyricsLineEditor.openEditorForCurrentTrack(
                         activity, fragment, query, activeSheet, () -> page.dismiss()));
@@ -260,7 +262,7 @@ final class LrclibUi {
                 editorCtaParams.setMargins(0, page.dp(6), 0, page.dp(4));
                 content.addView(editorBtn, editorCtaParams);
             }
-            if (!editedLines.isEmpty() || LyricsLineEditor.hasEditsForSheet(activity, activeSheet)) {
+            if (LyricsFeatures.editor() && (!editedLines.isEmpty() || LyricsLineEditor.hasEditsForSheet(activity, activeSheet))) {
                 LinearLayout editsCard = page.card();
                 int displayCount = editedLines.isEmpty() ? 1 : editedLines.size();
                 page.addActionRow(
@@ -875,7 +877,7 @@ final class LrclibUi {
     // 2c. LRC Export Preview & Save Page
     // =========================================================================
 
-    private static void openExportLrcPage(
+    static void openExportLrcPage(
             final Activity activity,
             final LrclibModels.TrackQuery query,
             final LyricsLineEditor.Sheet sheet,
@@ -993,183 +995,230 @@ final class LrclibUi {
         if (activity == null || activity.isFinishing()) return;
         LrclibController.captureContext(activity);
 
-        final Page page = new Page(activity, LrclibStrings.text(activity, "settings_title"));
+        final boolean hasLrclib = LyricsFeatures.lrclib();
+        final boolean hasPron = LyricsFeatures.pronunciation();
+        final boolean hasEditor = LyricsFeatures.editor();
+        int enabledCount = (hasLrclib ? 1 : 0) + (hasPron ? 1 : 0) + (hasEditor ? 1 : 0);
+        String titleKey;
+        if (enabledCount > 1) {
+            titleKey = "settings_title_lyrics";
+        } else if (hasLrclib) {
+            titleKey = "settings_title";
+        } else if (hasPron) {
+            titleKey = "settings_title_pronunciation";
+        } else {
+            titleKey = "settings_title_editor";
+        }
+
+        final Page page = new Page(activity, LrclibStrings.text(activity, titleKey));
         final LinearLayout content = page.createScrollBody();
 
         final Runnable[] rebuild = new Runnable[1];
         rebuild[0] = () -> {
             content.removeAllViews();
 
-            // Master enable toggle
-            LinearLayout mainCard = page.card();
-            page.addSwitchRow(
-                    mainCard,
-                    LrclibStrings.text(activity, "enabled"),
-                    LrclibStrings.text(activity, "enabled_summary"),
-                    LrclibPrefs.isEnabled(activity),
-                    checked -> {
-                        LrclibPrefs.setEnabled(activity, checked);
-                        LrclibController.refreshAllUi();
-                    }
-            );
-            content.addView(mainCard, page.cardParams());
-
-            // Local LRC folder & priority section
-            content.addView(page.sectionHeader(LrclibStrings.text(activity, "section_local")));
-            LinearLayout localFolderCard = page.card();
-            localFolderCard.addView(page.text(LrclibStrings.text(activity, "local_folder_title"), 15, true, page.primary));
-            boolean hasFolder = LrclibPrefs.hasLocalFolder(activity);
-            String folderSummary;
-            if (folderScanning) {
-                folderSummary = LrclibStrings.text(activity, "local_folder_scanning");
-            } else if (hasFolder) {
-                String label = LrclibPrefs.getLocalFolderLabel(activity);
-                if (label.isEmpty()) label = LrclibPrefs.getLocalFolderUri(activity);
-                folderSummary = LrclibStrings.text(
-                        activity, "local_folder_status", label, LrclibPrefs.getLocalFolderCount(activity));
-            } else {
-                folderSummary = LrclibStrings.text(activity, "local_folder_not_set");
-            }
-            TextView folderDescTv = page.text(folderSummary, 12, false, hasFolder ? page.accent : page.secondary);
-            folderDescTv.setPadding(0, page.dp(4), 0, page.dp(8));
-            folderDescTv.setLineSpacing(page.dp(2), 1f);
-            localFolderCard.addView(folderDescTv);
-
-            localFolderCard.addView(page.separator(), page.sepParams());
-            page.addActionRow(
-                    localFolderCard,
-                    LrclibStrings.text(activity, hasFolder ? "local_folder_change" : "local_folder_choose"),
-                    page.accent,
-                    () -> LrcPickerFragment.pickFolder(activity, (treeUri, displayLabel) -> {
-                        LrclibPrefs.setLocalFolder(activity, treeUri.toString(), displayLabel);
-                        rescanLocalFolder(activity, rebuild[0], true);
-                    })
-            );
-            if (hasFolder) {
-                localFolderCard.addView(page.separator(), page.sepParams());
-                page.addActionRow(
-                        localFolderCard,
-                        LrclibStrings.text(activity, "local_folder_rescan"),
-                        page.primary,
-                        () -> rescanLocalFolder(activity, rebuild[0], true)
+            if (hasLrclib) {
+                // Master enable toggle
+                LinearLayout mainCard = page.card();
+                page.addSwitchRow(
+                        mainCard,
+                        LrclibStrings.text(activity, "enabled"),
+                        LrclibStrings.text(activity, "enabled_summary"),
+                        LrclibPrefs.isEnabled(activity),
+                        checked -> {
+                            LrclibPrefs.setEnabled(activity, checked);
+                            LrclibController.refreshAllUi();
+                        }
                 );
+                content.addView(mainCard, page.cardParams());
+
+                // Local LRC folder & priority section
+                content.addView(page.sectionHeader(LrclibStrings.text(activity, "section_local")));
+                LinearLayout localFolderCard = page.card();
+                localFolderCard.addView(page.text(LrclibStrings.text(activity, "local_folder_title"), 15, true, page.primary));
+                boolean hasFolder = LrclibPrefs.hasLocalFolder(activity);
+                String folderSummary;
+                if (folderScanning) {
+                    folderSummary = LrclibStrings.text(activity, "local_folder_scanning");
+                } else if (hasFolder) {
+                    String label = LrclibPrefs.getLocalFolderLabel(activity);
+                    if (label.isEmpty()) label = LrclibPrefs.getLocalFolderUri(activity);
+                    folderSummary = LrclibStrings.text(
+                            activity, "local_folder_status", label, LrclibPrefs.getLocalFolderCount(activity));
+                } else {
+                    folderSummary = LrclibStrings.text(activity, "local_folder_not_set");
+                }
+                TextView folderDescTv = page.text(folderSummary, 12, false, hasFolder ? page.accent : page.secondary);
+                folderDescTv.setPadding(0, page.dp(4), 0, page.dp(8));
+                folderDescTv.setLineSpacing(page.dp(2), 1f);
+                localFolderCard.addView(folderDescTv);
+
                 localFolderCard.addView(page.separator(), page.sepParams());
                 page.addActionRow(
                         localFolderCard,
-                        LrclibStrings.text(activity, "local_folder_clear"),
-                        page.secondary,
+                        LrclibStrings.text(activity, hasFolder ? "local_folder_change" : "local_folder_choose"),
+                        page.accent,
+                        () -> LrcPickerFragment.pickFolder(activity, (treeUri, displayLabel) -> {
+                            LrclibPrefs.setLocalFolder(activity, treeUri.toString(), displayLabel);
+                            rescanLocalFolder(activity, rebuild[0], true);
+                        })
+                );
+                if (hasFolder) {
+                    localFolderCard.addView(page.separator(), page.sepParams());
+                    page.addActionRow(
+                            localFolderCard,
+                            LrclibStrings.text(activity, "local_folder_rescan"),
+                            page.primary,
+                            () -> rescanLocalFolder(activity, rebuild[0], true)
+                    );
+                    localFolderCard.addView(page.separator(), page.sepParams());
+                    page.addActionRow(
+                            localFolderCard,
+                            LrclibStrings.text(activity, "local_folder_clear"),
+                            page.secondary,
+                            () -> {
+                                LrclibPrefs.clearLocalFolder(activity);
+                                LrclibController.onLocalFolderChanged(activity);
+                                rebuild[0].run();
+                            }
+                    );
+                }
+                content.addView(localFolderCard, page.cardParams());
+
+                LinearLayout localPriorityCard = page.card();
+                TextView localPrioHeader = page.text(LrclibStrings.text(activity, "local_priority_title"), 13, true, page.secondary);
+                localPrioHeader.setPadding(0, 0, 0, page.dp(6));
+                localPriorityCard.addView(localPrioHeader);
+                LrclibModels.LocalLrcPriority localPriority = LrclibPrefs.getLocalLrcPriority(activity);
+                page.addRadioRow(
+                        localPriorityCard,
+                        LrclibStrings.text(activity, "local_priority_prefer"),
+                        LrclibStrings.text(activity, "local_priority_prefer_desc"),
+                        localPriority == LrclibModels.LocalLrcPriority.PREFER_LOCAL,
+                        true,
                         () -> {
-                            LrclibPrefs.clearLocalFolder(activity);
-                            LrclibController.onLocalFolderChanged(activity);
+                            LrclibPrefs.setLocalLrcPriority(activity, LrclibModels.LocalLrcPriority.PREFER_LOCAL);
+                            LrclibController.clearResolvedStates();
                             rebuild[0].run();
                         }
                 );
-            }
-            content.addView(localFolderCard, page.cardParams());
+                localPriorityCard.addView(page.separator(), page.sepParams());
+                page.addRadioRow(
+                        localPriorityCard,
+                        LrclibStrings.text(activity, "local_priority_missing_unsynced"),
+                        LrclibStrings.text(activity, "local_priority_missing_unsynced_desc"),
+                        localPriority == LrclibModels.LocalLrcPriority.MISSING_AND_UNSYNCED,
+                        true,
+                        () -> {
+                            LrclibPrefs.setLocalLrcPriority(activity, LrclibModels.LocalLrcPriority.MISSING_AND_UNSYNCED);
+                            LrclibController.clearResolvedStates();
+                            rebuild[0].run();
+                        }
+                );
+                localPriorityCard.addView(page.separator(), page.sepParams());
+                page.addRadioRow(
+                        localPriorityCard,
+                        LrclibStrings.text(activity, "local_priority_missing_only"),
+                        LrclibStrings.text(activity, "local_priority_missing_only_desc"),
+                        localPriority == LrclibModels.LocalLrcPriority.MISSING_ONLY,
+                        true,
+                        () -> {
+                            LrclibPrefs.setLocalLrcPriority(activity, LrclibModels.LocalLrcPriority.MISSING_ONLY);
+                            LrclibController.clearResolvedStates();
+                            rebuild[0].run();
+                        }
+                );
+                content.addView(localPriorityCard, page.cardParams());
 
-            LinearLayout localPriorityCard = page.card();
-            TextView localPrioHeader = page.text(LrclibStrings.text(activity, "local_priority_title"), 13, true, page.secondary);
-            localPrioHeader.setPadding(0, 0, 0, page.dp(6));
-            localPriorityCard.addView(localPrioHeader);
-            LrclibModels.LocalLrcPriority localPriority = LrclibPrefs.getLocalLrcPriority(activity);
-            page.addRadioRow(
-                    localPriorityCard,
-                    LrclibStrings.text(activity, "local_priority_prefer"),
-                    LrclibStrings.text(activity, "local_priority_prefer_desc"),
-                    localPriority == LrclibModels.LocalLrcPriority.PREFER_LOCAL,
-                    true,
-                    () -> {
-                        LrclibPrefs.setLocalLrcPriority(activity, LrclibModels.LocalLrcPriority.PREFER_LOCAL);
-                        LrclibController.clearResolvedStates();
-                        rebuild[0].run();
-                    }
-            );
-            localPriorityCard.addView(page.separator(), page.sepParams());
-            page.addRadioRow(
-                    localPriorityCard,
-                    LrclibStrings.text(activity, "local_priority_missing_unsynced"),
-                    LrclibStrings.text(activity, "local_priority_missing_unsynced_desc"),
-                    localPriority == LrclibModels.LocalLrcPriority.MISSING_AND_UNSYNCED,
-                    true,
-                    () -> {
-                        LrclibPrefs.setLocalLrcPriority(activity, LrclibModels.LocalLrcPriority.MISSING_AND_UNSYNCED);
-                        LrclibController.clearResolvedStates();
-                        rebuild[0].run();
-                    }
-            );
-            localPriorityCard.addView(page.separator(), page.sepParams());
-            page.addRadioRow(
-                    localPriorityCard,
-                    LrclibStrings.text(activity, "local_priority_missing_only"),
-                    LrclibStrings.text(activity, "local_priority_missing_only_desc"),
-                    localPriority == LrclibModels.LocalLrcPriority.MISSING_ONLY,
-                    true,
-                    () -> {
-                        LrclibPrefs.setLocalLrcPriority(activity, LrclibModels.LocalLrcPriority.MISSING_ONLY);
-                        LrclibController.clearResolvedStates();
-                        rebuild[0].run();
-                    }
-            );
-            content.addView(localPriorityCard, page.cardParams());
+                // Lyrics priority section
+                content.addView(page.sectionHeader(LrclibStrings.text(activity, "section_mode")));
+                LinearLayout modeCard = page.card();
+                LrclibModels.FallbackMode mode = LrclibPrefs.getFallbackMode(activity);
+                page.addRadioRow(
+                        modeCard,
+                        LrclibStrings.text(activity, "mode_missing_and_unsynced"),
+                        LrclibStrings.text(activity, "mode_missing_and_unsynced_desc"),
+                        mode == LrclibModels.FallbackMode.MISSING_AND_UNSYNCED,
+                        true,
+                        () -> {
+                            LrclibPrefs.setFallbackMode(activity, LrclibModels.FallbackMode.MISSING_AND_UNSYNCED);
+                            LrclibController.clearResolvedStates();
+                            rebuild[0].run();
+                        }
+                );
+                modeCard.addView(page.separator(), page.sepParams());
+                page.addRadioRow(
+                        modeCard,
+                        LrclibStrings.text(activity, "mode_missing_only"),
+                        LrclibStrings.text(activity, "mode_missing_only_desc"),
+                        mode == LrclibModels.FallbackMode.MISSING_ONLY,
+                        true,
+                        () -> {
+                            LrclibPrefs.setFallbackMode(activity, LrclibModels.FallbackMode.MISSING_ONLY);
+                            LrclibController.clearResolvedStates();
+                            rebuild[0].run();
+                        }
+                );
+                modeCard.addView(page.separator(), page.sepParams());
+                page.addRadioRow(
+                        modeCard,
+                        LrclibStrings.text(activity, "mode_prefer_lrclib"),
+                        LrclibStrings.text(activity, "mode_prefer_lrclib_desc"),
+                        mode == LrclibModels.FallbackMode.PREFER_LRCLIB,
+                        true,
+                        () -> {
+                            LrclibPrefs.setFallbackMode(activity, LrclibModels.FallbackMode.PREFER_LRCLIB);
+                            LrclibController.clearResolvedStates();
+                            rebuild[0].run();
+                        }
+                );
+                content.addView(modeCard, page.cardParams());
 
-            // Lyrics priority section
-            content.addView(page.sectionHeader(LrclibStrings.text(activity, "section_mode")));
-            LinearLayout modeCard = page.card();
-            LrclibModels.FallbackMode mode = LrclibPrefs.getFallbackMode(activity);
-            page.addRadioRow(
-                    modeCard,
-                    LrclibStrings.text(activity, "mode_missing_and_unsynced"),
-                    LrclibStrings.text(activity, "mode_missing_and_unsynced_desc"),
-                    mode == LrclibModels.FallbackMode.MISSING_AND_UNSYNCED,
-                    true,
-                    () -> {
-                        LrclibPrefs.setFallbackMode(activity, LrclibModels.FallbackMode.MISSING_AND_UNSYNCED);
-                        LrclibController.clearResolvedStates();
-                        rebuild[0].run();
-                    }
-            );
-            modeCard.addView(page.separator(), page.sepParams());
-            page.addRadioRow(
-                    modeCard,
-                    LrclibStrings.text(activity, "mode_missing_only"),
-                    LrclibStrings.text(activity, "mode_missing_only_desc"),
-                    mode == LrclibModels.FallbackMode.MISSING_ONLY,
-                    true,
-                    () -> {
-                        LrclibPrefs.setFallbackMode(activity, LrclibModels.FallbackMode.MISSING_ONLY);
-                        LrclibController.clearResolvedStates();
-                        rebuild[0].run();
-                    }
-            );
-            modeCard.addView(page.separator(), page.sepParams());
-            page.addRadioRow(
-                    modeCard,
-                    LrclibStrings.text(activity, "mode_prefer_lrclib"),
-                    LrclibStrings.text(activity, "mode_prefer_lrclib_desc"),
-                    mode == LrclibModels.FallbackMode.PREFER_LRCLIB,
-                    true,
-                    () -> {
-                        LrclibPrefs.setFallbackMode(activity, LrclibModels.FallbackMode.PREFER_LRCLIB);
-                        LrclibController.clearResolvedStates();
-                        rebuild[0].run();
-                    }
-            );
-            content.addView(modeCard, page.cardParams());
-
-            // Matching & playback section
-            content.addView(page.sectionHeader(LrclibStrings.text(activity, "section_playback")));
-            LinearLayout playbackCard = page.card();
-            page.addSwitchRow(
-                    playbackCard,
-                    LrclibStrings.text(activity, "word_sync"),
-                    LrclibStrings.text(activity, "word_sync_summary"),
-                    LrclibPrefs.isWordSyncEnabled(activity),
-                    checked -> LrclibPrefs.setWordSyncEnabled(activity, checked)
-            );
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Matching & playback section
+                content.addView(page.sectionHeader(LrclibStrings.text(activity, "section_playback")));
+                LinearLayout playbackCard = page.card();
+                page.addSwitchRow(
+                        playbackCard,
+                        LrclibStrings.text(activity, "word_sync"),
+                        LrclibStrings.text(activity, "word_sync_summary"),
+                        LrclibPrefs.isWordSyncEnabled(activity),
+                        checked -> LrclibPrefs.setWordSyncEnabled(activity, checked)
+                );
                 playbackCard.addView(page.separator(), page.sepParams());
                 page.addSwitchRow(
                         playbackCard,
+                        LrclibStrings.text(activity, "allow_plain"),
+                        LrclibStrings.text(activity, "allow_plain_summary"),
+                        LrclibPrefs.isAllowPlainEnabled(activity),
+                        checked -> LrclibPrefs.setAllowPlainEnabled(activity, checked)
+                );
+                playbackCard.addView(page.separator(), page.sepParams());
+                page.addSwitchRow(
+                        playbackCard,
+                        LrclibStrings.text(activity, "search_fallback"),
+                        LrclibStrings.text(activity, "search_fallback_summary"),
+                        LrclibPrefs.isSearchFallbackEnabled(activity),
+                        checked -> LrclibPrefs.setSearchFallbackEnabled(activity, checked)
+                );
+                playbackCard.addView(page.separator(), page.sepParams());
+                page.addOffsetStepper(
+                        playbackCard,
+                        LrclibStrings.text(activity, "default_offset"),
+                        LrclibPrefs.getDefaultOffsetMs(activity),
+                        newOffset -> {
+                            LrclibPrefs.setDefaultOffsetMs(activity, newOffset);
+                            rebuild[0].run();
+                        }
+                );
+                content.addView(playbackCard, page.cardParams());
+            }
+
+            // On-device pronunciation guides section (shown whenever Pronunciation patch is installed)
+            if (hasPron && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                content.addView(page.sectionHeader(LrclibStrings.text(activity, "section_pronunciation")));
+                LinearLayout pronCard = page.card();
+                page.addSwitchRow(
+                        pronCard,
                         LrclibStrings.text(activity, "romanization"),
                         LrclibStrings.text(activity, "romanization_summary"),
                         LrclibPrefs.isRomanizationEnabled(activity),
@@ -1178,103 +1227,94 @@ final class LrclibUi {
                             LrclibController.reloadCurrentTrack(activity, null, false);
                         }
                 );
-                playbackCard.addView(page.separator(), page.sepParams());
+                pronCard.addView(page.separator(), page.sepParams());
                 if (dictionaryDownloading || KuromojiDictionary.isInstalled(activity)) {
                     String status = dictionaryDownloading ? "dictionary_downloading" : "dictionary_installed";
-                    playbackCard.addView(page.text(LrclibStrings.text(activity, status), 15, false, page.secondary));
+                    pronCard.addView(page.text(LrclibStrings.text(activity, status), 15, false, page.secondary));
                 } else {
-                    page.addActionRow(playbackCard, LrclibStrings.text(activity, "dictionary_download"), page.accent,
+                    page.addActionRow(pronCard, LrclibStrings.text(activity, "dictionary_download"), page.accent,
                             () -> downloadDictionary(activity, rebuild[0]));
                 }
+                content.addView(pronCard, page.cardParams());
             }
-            playbackCard.addView(page.separator(), page.sepParams());
-            page.addSwitchRow(
-                    playbackCard,
-                    LrclibStrings.text(activity, "allow_plain"),
-                    LrclibStrings.text(activity, "allow_plain_summary"),
-                    LrclibPrefs.isAllowPlainEnabled(activity),
-                    checked -> LrclibPrefs.setAllowPlainEnabled(activity, checked)
-            );
-            playbackCard.addView(page.separator(), page.sepParams());
-            page.addSwitchRow(
-                    playbackCard,
-                    LrclibStrings.text(activity, "search_fallback"),
-                    LrclibStrings.text(activity, "search_fallback_summary"),
-                    LrclibPrefs.isSearchFallbackEnabled(activity),
-                    checked -> LrclibPrefs.setSearchFallbackEnabled(activity, checked)
-            );
-            playbackCard.addView(page.separator(), page.sepParams());
-            page.addOffsetStepper(
-                    playbackCard,
-                    LrclibStrings.text(activity, "default_offset"),
-                    LrclibPrefs.getDefaultOffsetMs(activity),
-                    newOffset -> {
-                        LrclibPrefs.setDefaultOffsetMs(activity, newOffset);
-                        rebuild[0].run();
-                    }
-            );
-            content.addView(playbackCard, page.cardParams());
 
-            // Source indicator UI section
-            content.addView(page.sectionHeader(LrclibStrings.text(activity, "section_ui")));
-            LinearLayout uiCard = page.card();
-            page.addSwitchRow(
-                    uiCard,
-                    LrclibStrings.text(activity, "show_button_badge"),
-                    LrclibStrings.text(activity, "show_button_badge_summary"),
-                    LrclibPrefs.isShowButtonBadge(activity),
-                    checked -> {
-                        LrclibPrefs.setShowButtonBadge(activity, checked);
-                        LrclibController.refreshAllUi();
-                    }
-            );
-            uiCard.addView(page.separator(), page.sepParams());
-            page.addSwitchRow(
-                    uiCard,
-                    LrclibStrings.text(activity, "show_lyrics_pill"),
-                    LrclibStrings.text(activity, "show_lyrics_pill_summary"),
-                    LrclibPrefs.isShowLyricsPill(activity),
-                    checked -> {
-                        LrclibPrefs.setShowLyricsPill(activity, checked);
-                        LrclibController.refreshAllUi();
-                    }
-            );
-            content.addView(uiCard, page.cardParams());
+            if (hasLrclib) {
+                // Source indicator UI section
+                content.addView(page.sectionHeader(LrclibStrings.text(activity, "section_ui")));
+                LinearLayout uiCard = page.card();
+                page.addSwitchRow(
+                        uiCard,
+                        LrclibStrings.text(activity, "show_button_badge"),
+                        LrclibStrings.text(activity, "show_button_badge_summary"),
+                        LrclibPrefs.isShowButtonBadge(activity),
+                        checked -> {
+                            LrclibPrefs.setShowButtonBadge(activity, checked);
+                            LrclibController.refreshAllUi();
+                        }
+                );
+                uiCard.addView(page.separator(), page.sepParams());
+                page.addSwitchRow(
+                        uiCard,
+                        LrclibStrings.text(activity, "show_lyrics_pill"),
+                        LrclibStrings.text(activity, "show_lyrics_pill_summary"),
+                        LrclibPrefs.isShowLyricsPill(activity),
+                        checked -> {
+                            LrclibPrefs.setShowLyricsPill(activity, checked);
+                            LrclibController.refreshAllUi();
+                        }
+                );
+                content.addView(uiCard, page.cardParams());
+            }
 
-            // Overrides & cache section
-            content.addView(page.sectionHeader(LrclibStrings.text(activity, "section_data")));
-            LinearLayout dataCard = page.card();
-            int overrideCount = LrclibPrefs.loadAllOverrides(activity).size();
-            page.addActionRow(
-                    dataCard,
-                    LrclibStrings.text(activity, "manage_overrides", overrideCount),
-                    page.primary,
-                    () -> openOverridesManager(activity, rebuild[0])
-            );
-            dataCard.addView(page.separator(), page.sepParams());
-            int editedDocCount = LyricsEdits.countDocuments(activity);
-            page.addActionRow(
-                    dataCard,
-                    LrclibStrings.text(activity, "manage_edited_lyrics", editedDocCount),
-                    page.primary,
-                    () -> openEditedLyricsManager(activity, rebuild[0])
-            );
-            dataCard.addView(page.separator(), page.sepParams());
-            int cacheCount = LrclibPrefs.getCacheFileCount(activity);
-            page.addActionRow(
-                    dataCard,
-                    LrclibStrings.text(activity, "clear_cache", cacheCount),
-                    page.accent,
-                    () -> {
-                        LrclibPrefs.clearCache(activity);
-                        LrclibController.clearResolvedStates();
-                        Toast.makeText(activity, LrclibStrings.text(activity, "cache_cleared"), Toast.LENGTH_SHORT).show();
-                        rebuild[0].run();
-                    }
-            );
-            content.addView(dataCard, page.cardParams());
+            // Data / edited lyrics section
+            if (hasLrclib || hasEditor) {
+                String dataHdrKey = hasLrclib ? "section_data" : "section_editor";
+                content.addView(page.sectionHeader(LrclibStrings.text(activity, dataHdrKey)));
+                LinearLayout dataCard = page.card();
+                boolean needSep = false;
+                if (hasLrclib) {
+                    int overrideCount = LrclibPrefs.loadAllOverrides(activity).size();
+                    page.addActionRow(
+                            dataCard,
+                            LrclibStrings.text(activity, "manage_overrides", overrideCount),
+                            page.primary,
+                            () -> openOverridesManager(activity, rebuild[0])
+                    );
+                    needSep = true;
+                }
+                if (hasEditor) {
+                    if (needSep) dataCard.addView(page.separator(), page.sepParams());
+                    int editedDocCount = LyricsEdits.countDocuments(activity);
+                    page.addActionRow(
+                            dataCard,
+                            LrclibStrings.text(activity, "manage_edited_lyrics", editedDocCount),
+                            page.primary,
+                            () -> openEditedLyricsManager(activity, rebuild[0])
+                    );
+                    needSep = true;
+                }
+                if (hasLrclib) {
+                    if (needSep) dataCard.addView(page.separator(), page.sepParams());
+                    int cacheCount = LrclibPrefs.getCacheFileCount(activity);
+                    page.addActionRow(
+                            dataCard,
+                            LrclibStrings.text(activity, "clear_cache", cacheCount),
+                            page.accent,
+                            () -> {
+                                LrclibPrefs.clearCache(activity);
+                                LrclibController.clearResolvedStates();
+                                Toast.makeText(activity, LrclibStrings.text(activity, "cache_cleared"), Toast.LENGTH_SHORT).show();
+                                rebuild[0].run();
+                            }
+                    );
+                }
+                content.addView(dataCard, page.cardParams());
+            }
 
-            TextView about = page.text(LrclibStrings.text(activity, "about"), 13, false, page.secondary);
+            String footerKey = hasLrclib
+                    ? "about"
+                    : (hasEditor ? "editor_settings_tip" : "pronunciation_settings_tip");
+            TextView about = page.text(LrclibStrings.text(activity, footerKey), 13, false, page.secondary);
             about.setLineSpacing(page.dp(3), 1f);
             about.setPadding(page.dp(4), page.dp(12), page.dp(4), page.dp(24));
             content.addView(about);

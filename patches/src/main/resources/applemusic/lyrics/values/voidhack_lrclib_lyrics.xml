@@ -283,4 +283,17 @@
     <string name="voidhack_lrclib_editor_unsaved_title">Unsaved changes</string>
     <string name="voidhack_lrclib_editor_unsaved_message">Save your lyrics edits before closing?</string>
     <string name="voidhack_lrclib_editor_discard">Discard Changes</string>
+    <string name="voidhack_lrclib_settings_category_lyrics">Lyrics</string>
+    <string name="voidhack_lrclib_settings_entry_lyrics">Lyrics settings</string>
+    <string name="voidhack_lrclib_settings_title_lyrics">Lyrics settings</string>
+    <string name="voidhack_lrclib_settings_category_pronunciation">Pronunciation guides</string>
+    <string name="voidhack_lrclib_settings_entry_pronunciation">Pronunciation guide settings</string>
+    <string name="voidhack_lrclib_settings_title_pronunciation">Pronunciation guides</string>
+    <string name="voidhack_lrclib_settings_category_editor">Lyrics editor</string>
+    <string name="voidhack_lrclib_settings_entry_editor">Lyrics editor settings</string>
+    <string name="voidhack_lrclib_settings_title_editor">Lyrics editor</string>
+    <string name="voidhack_lrclib_section_pronunciation">Pronunciation guides</string>
+    <string name="voidhack_lrclib_section_editor">Lyrics editor</string>
+    <string name="voidhack_lrclib_editor_settings_tip">Long-press any lyric line in Apple Music to open the full-song lyrics editor, adjust timings, insert interludes, or export LRC.</string>
+    <string name="voidhack_lrclib_pronunciation_settings_tip">Generates missing pronunciation guides on-device while preserving Apple Music\'s official guides. Enable \"Show Pronunciation\" in the lyrics menu to display them.</string>
 </resources>

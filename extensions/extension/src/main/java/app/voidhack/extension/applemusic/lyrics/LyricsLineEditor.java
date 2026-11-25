@@ -123,7 +123,9 @@ final class LyricsLineEditor {
         String ttml = generated;
         List<LyricsEditTtml.InterludeRange> interludes = Collections.emptyList();
         try {
-            boolean needRomanization = !hasOfficialReading && LrclibPrefs.isRomanizationEnabled(context);
+            boolean allowPronunciation = LyricsFeatures.pronunciation();
+            boolean allowEditor = LyricsFeatures.editor();
+            boolean needRomanization = allowPronunciation && !hasOfficialReading && LrclibPrefs.isRomanizationEnabled(context);
             if (generated != null) {
                 baseline = generated;
             } else if (needRomanization) {
@@ -131,7 +133,7 @@ final class LyricsLineEditor {
                 if (guide != null) baseline = guide;
             }
 
-            LyricsEditTtml.DocumentEdit docEdit = LyricsEdits.loadDocument(context, documentKey);
+            LyricsEditTtml.DocumentEdit docEdit = allowEditor ? LyricsEdits.loadDocument(context, documentKey) : null;
             if (docEdit != null) {
                 ttml = LyricsEditTtml.applyDocument(
                         original,
@@ -139,7 +141,8 @@ final class LyricsLineEditor {
                         docEdit,
                         wordTiming,
                         needRomanization,
-                        needRomanization ? LrclibRomanizer::create : null);
+                        needRomanization ? LrclibRomanizer::create : null,
+                        allowPronunciation);
                 interludes = LyricsEditTtml.extractInterludeRanges(docEdit);
                 if (documentKey != null) {
                     LyricsEdits.backfillMetadata(
@@ -147,7 +150,8 @@ final class LyricsLineEditor {
                             LyricsEditTtml.editedLinesForDocument(baseline, ttml, docEdit));
                 }
             } else {
-                Map<Integer, LyricsEditTtml.Edit> legacyEdits = edits != null ? edits : Collections.emptyMap();
+                Map<Integer, LyricsEditTtml.Edit> legacyEdits =
+                        (allowEditor && edits != null) ? edits : Collections.emptyMap();
                 String editedText = LyricsEditTtml.applyText(original, legacyEdits);
                 if (!editedText.equals(original)) {
                     ttml = editedText;
@@ -158,8 +162,10 @@ final class LyricsLineEditor {
                 } else {
                     ttml = baseline;
                 }
-                ttml = LyricsEditTtml.applyReadings(ttml, legacyEdits);
-                interludes = LyricsEditTtml.extractTtmlInterludeRanges(ttml);
+                if (allowPronunciation || hasOfficialReading) {
+                    ttml = LyricsEditTtml.applyReadings(ttml, legacyEdits);
+                }
+                interludes = allowEditor ? LyricsEditTtml.extractTtmlInterludeRanges(ttml) : Collections.emptyList();
                 if (!legacyEdits.isEmpty() && documentKey != null) {
                     LyricsEdits.backfillMetadata(
                             context, documentKey, trackKey, trackTitle, artistName,
@@ -169,7 +175,9 @@ final class LyricsLineEditor {
         } catch (Exception error) {
             Log.w(TAG, "Could not apply lyric edits", error);
             ttml = generated != null ? generated : original;
-            interludes = LyricsEditTtml.extractTtmlInterludeRanges(ttml);
+            interludes = LyricsFeatures.editor()
+                    ? LyricsEditTtml.extractTtmlInterludeRanges(ttml)
+                    : Collections.emptyList();
         }
         return new Sheet(trackKey, documentKey, original, baseline, ttml, wordTiming, hasOfficialReading, interludes);
     }
@@ -177,7 +185,9 @@ final class LyricsLineEditor {
     static void remember(Object song, Sheet lyrics) {
         if (song != null && lyrics != null) {
             PARSED.put(song, lyrics);
-            LyricsInterludes.remember(song, lyrics.explicitInterludes);
+            if (LyricsFeatures.editor()) {
+                LyricsInterludes.remember(song, lyrics.explicitInterludes);
+            }
             if (lyrics.trackKey != null && !lyrics.trackKey.isEmpty()) {
                 BY_TRACK.put(lyrics.trackKey, lyrics);
             }
@@ -185,7 +195,9 @@ final class LyricsLineEditor {
     }
 
     static void bind(Object fragment, Object song) {
-        LyricsInterludes.setActiveSong(song);
+        if (LyricsFeatures.editor()) {
+            LyricsInterludes.setActiveSong(song);
+        }
         Sheet lyrics = song == null ? null : PARSED.get(song);
         if (lyrics == null) {
             VISIBLE.remove(fragment);
@@ -243,7 +255,8 @@ final class LyricsLineEditor {
 
     static boolean openEditorForCurrentTrack(
             Activity activity, Object fragment, LrclibModels.TrackQuery query, Sheet sheet, Runnable onSaved) {
-        if (activity == null || activity.isFinishing() || sheet == null || sheet.documentKey == null) {
+        if (!LyricsFeatures.editor() || activity == null || activity.isFinishing()
+                || sheet == null || sheet.documentKey == null) {
             return false;
         }
         LyricsEditorPage.open(activity, fragment, sheet, query, -1, () -> {
@@ -254,6 +267,7 @@ final class LyricsLineEditor {
     }
 
     static boolean onTimedLineHeld(Object fragment, View anchor, Object nativeLine, Runnable share) {
+        if (!LyricsFeatures.editor()) return false;
         Rendered rendered = VISIBLE.get(fragment);
         if (rendered == null) return false;
         try {
@@ -280,6 +294,7 @@ final class LyricsLineEditor {
     }
 
     static boolean onStaticLineHeld(Object fragment, View anchor, int displayedLine) {
+        if (!LyricsFeatures.editor()) return false;
         Rendered rendered = VISIBLE.get(fragment);
         if (rendered == null || displayedLine < 0) return false;
         int matchedPosition = -1;

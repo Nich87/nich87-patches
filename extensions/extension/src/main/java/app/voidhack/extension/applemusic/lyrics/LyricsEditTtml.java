@@ -448,6 +448,19 @@ final class LyricsEditTtml {
             boolean generateMissingReadings,
             BiFunction<String, String, UnaryOperator<String>> romanizerFactory)
             throws IOException, SAXException, ParserConfigurationException, TransformerException {
+        return applyDocument(
+                originalTtml, baselineTtml, edit, wordTiming, generateMissingReadings, romanizerFactory, true);
+    }
+
+    static String applyDocument(
+            String originalTtml,
+            String baselineTtml,
+            DocumentEdit edit,
+            boolean wordTiming,
+            boolean generateMissingReadings,
+            BiFunction<String, String, UnaryOperator<String>> romanizerFactory,
+            boolean allowCustomReadingTrack)
+            throws IOException, SAXException, ParserConfigurationException, TransformerException {
         if (originalTtml == null || edit == null || edit.lines.isEmpty()) return originalTtml;
         Layout layout = Layout.parse(originalTtml);
         if (layout == null) return originalTtml;
@@ -649,7 +662,8 @@ final class LyricsEditTtml {
             romanizer = romanizerFactory.apply(lang, allTextsForRomanizer.toString());
         }
 
-        boolean shouldWriteReadingTrack = hasExistingReadingTrack || anyNonEmptyReading || romanizer != null;
+        boolean shouldWriteReadingTrack = hasExistingReadingTrack
+                || (allowCustomReadingTrack && (anyNonEmptyReading || romanizer != null));
         if (shouldWriteReadingTrack) {
             Element track = origReadingTrack;
             boolean createdNew = false;

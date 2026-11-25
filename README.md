@@ -24,7 +24,7 @@
 <p align="center">
   <strong>Custom patches by Nich87 for use with <a href="https://morphe.software">Morphe</a>.</strong><br>
   This is an independent project based on the <a href="https://github.com/MorpheApp/morphe-patches-template">Morphe patches template</a>.<br>
-  Provides Apple Music patches (Liquid Glass bottom bar, custom fonts, LRCLIB lyrics with on-device pronunciation guides and line editing, on-device stereo &amp; Dolby Atmos vocal separation, library backup/downloads, and Japanese metadata repair) and Twitter/X Spaces local mute. Each patch can be selected independently.
+  Provides Apple Music patches (Liquid Glass bottom bar, custom fonts, LRCLIB &amp; local lyrics, on-device pronunciation guides, a full-song lyrics editor, on-device stereo &amp; Dolby Atmos vocal separation, library backup/downloads, and Japanese metadata repair) and Twitter/X Spaces local mute. Each patch can be selected independently.
 </p>
 
 </div>

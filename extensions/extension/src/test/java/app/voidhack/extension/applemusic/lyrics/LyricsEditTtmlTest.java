@@ -256,4 +256,25 @@ public class LyricsEditTtmlTest {
         assertEquals(16_000L, fromDoc.get(1).endMs);
     }
 
+    @Test
+    public void applyDocumentSkipsCreatingCustomReadingTrackWhenPronunciationPatchDisabled() throws Exception {
+        String base = WORD_HEADER + "<body dur=\"00:20.000\"><div begin=\"00:01.000\" end=\"00:08.000\">"
+                + WORD_LINES + "</div></body></tt>";
+        LyricsEditTtml.DocumentEdit edit = new LyricsEditTtml.DocumentEdit(
+                true,
+                false,
+                List.of(
+                        new LyricsEditTtml.LinePatch(0, "編集した一行目", "henshu shita", true, 1_000L, 4_000L, false),
+                        new LyricsEditTtml.LinePatch(1, "星の歌", null, false, 8_000L, 11_000L, false)),
+                List.of(new LyricsEditTtml.InterludeRange(4_000L, 8_000L)));
+
+        String rebuilt = LyricsEditTtml.applyDocument(base, base, edit, true, false, null, false);
+        Document parsed = OfficialLyricsTtml.parse(rebuilt);
+        assertEquals(0, parsed.getElementsByTagNameNS(APPLE_NS, "transliteration").getLength());
+        List<LyricsEditTtml.Row> rows = LyricsEditTtml.rows(rebuilt);
+        assertEquals(2, rows.size());
+        assertEquals("編集した一行目", rows.get(0).text);
+        assertEquals(8_000L, rows.get(1).startMs);
+    }
+
 }

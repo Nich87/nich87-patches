@@ -283,4 +283,17 @@
     <string name="voidhack_lrclib_editor_unsaved_title">未保存の変更があります</string>
     <string name="voidhack_lrclib_editor_unsaved_message">閉じる前に歌詞の編集を保存しますか？</string>
     <string name="voidhack_lrclib_editor_discard">変更を破棄</string>
+    <string name="voidhack_lrclib_settings_category_lyrics">歌詞</string>
+    <string name="voidhack_lrclib_settings_entry_lyrics">歌詞設定</string>
+    <string name="voidhack_lrclib_settings_title_lyrics">歌詞設定</string>
+    <string name="voidhack_lrclib_settings_category_pronunciation">発音ガイド</string>
+    <string name="voidhack_lrclib_settings_entry_pronunciation">発音ガイド設定</string>
+    <string name="voidhack_lrclib_settings_title_pronunciation">発音ガイド</string>
+    <string name="voidhack_lrclib_settings_category_editor">歌詞エディタ</string>
+    <string name="voidhack_lrclib_settings_entry_editor">歌詞エディタ設定</string>
+    <string name="voidhack_lrclib_settings_title_editor">歌詞エディタ</string>
+    <string name="voidhack_lrclib_section_pronunciation">発音ガイド</string>
+    <string name="voidhack_lrclib_section_editor">歌詞エディタ</string>
+    <string name="voidhack_lrclib_editor_settings_tip">Apple Music の歌詞画面で任意の行を長押しすると、フル曲歌詞エディタが開き、歌詞編集・タイミング調整・間奏挿入・LRC 書き出しができます。</string>
+    <string name="voidhack_lrclib_pronunciation_settings_tip">Apple Music の公式発音ガイドを優先しつつ、未収録の読みを端末上で自動生成します。歌詞画面のメニューから「発音ガイドを表示」をオンにして使用してください。</string>
 </resources>

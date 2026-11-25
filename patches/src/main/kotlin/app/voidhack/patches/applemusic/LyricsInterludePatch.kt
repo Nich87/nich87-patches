@@ -75,7 +75,7 @@ private object LyricsRenderInterlude : Fingerprint(
 )
 
 internal val lyricsInterludePatch = bytecodePatch {
-    dependsOn(karaokePronunciationPatch)
+    dependsOn(lyricsBasePatch)
 
     execute {
         replaceLongThreshold(LyricsLineEventCallback.method)

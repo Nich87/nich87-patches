@@ -98,6 +98,10 @@ final class LyricsEditorPage {
     private final Typeface regular;
     private final Typeface semibold;
 
+    // Feature visibility (automatically hides Romaji/pronunciation UI when pronunciation guides are off)
+    private final boolean canAutoGenerateReading;
+    private final boolean showReadingUi;
+
     // Editor state
     private LyricsEditorModel.EditTab activeTab = LyricsEditorModel.EditTab.LYRICS;
     private int expandedLineId = -1;
@@ -120,6 +124,7 @@ final class LyricsEditorPage {
     // Persistent structural views
     private TextView subtitleTv;
     private TextView saveBtn;
+    private LinearLayout segmentWrap;
     private LinearLayout segmentContainer;
     private LinearLayout inlinePanelHost;
     private ScrollView scrollView;
@@ -189,6 +194,14 @@ final class LyricsEditorPage {
                 ? LyricsEdits.load(activity, sheet.documentKey) : null;
         this.doc = LyricsEditorModel.Document.fromTtml(
                 sheet.baseline, sheet.displayed, existingDoc, existingLegacy, sheet.wordTimed, durationMs);
+
+        this.canAutoGenerateReading = LyricsFeatures.pronunciation() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q;
+        boolean romanizationActive = LyricsFeatures.pronunciation() && LrclibPrefs.isRomanizationEnabled(activity);
+        this.showReadingUi = romanizationActive || sheet.hasOfficialReading || hasAnyDocReading(this.doc);
+        if (!this.showReadingUi) {
+            this.activeTab = LyricsEditorModel.EditTab.LYRICS;
+            this.findScope = LyricsEditorModel.EditTab.LYRICS;
+        }
 
         if (initialFocusLineIndex >= 0 && initialFocusLineIndex < doc.lines.size()) {
             this.expandedLineId = doc.lines.get(initialFocusLineIndex).id;
@@ -345,17 +358,20 @@ final class LyricsEditorPage {
 
         root.addView(navbar, new LinearLayout.LayoutParams(-1, dp(52)));
 
-        // 2. Authentic iOS Segmented Control (Lyrics | Romaji | Both)
-        LinearLayout segWrap = new LinearLayout(activity);
-        segWrap.setOrientation(LinearLayout.VERTICAL);
-        segWrap.setPadding(dp(16), dp(2), dp(16), dp(10));
+        // 2. Authentic iOS Segmented Control (Lyrics | Romaji | Both) — hidden when pronunciation guides are off
+        segmentWrap = new LinearLayout(activity);
+        segmentWrap.setOrientation(LinearLayout.VERTICAL);
+        segmentWrap.setPadding(dp(16), dp(2), dp(16), dp(10));
 
         segmentContainer = new LinearLayout(activity);
         segmentContainer.setOrientation(LinearLayout.HORIZONTAL);
         segmentContainer.setBackground(round(fillTertiary, 9));
         segmentContainer.setPadding(dp(2), dp(2), dp(2), dp(2));
-        segWrap.addView(segmentContainer, new LinearLayout.LayoutParams(-1, dp(32)));
-        root.addView(segWrap, new LinearLayout.LayoutParams(-1, -2));
+        segmentWrap.addView(segmentContainer, new LinearLayout.LayoutParams(-1, dp(32)));
+        if (!showReadingUi) {
+            segmentWrap.setVisibility(View.GONE);
+        }
+        root.addView(segmentWrap, new LinearLayout.LayoutParams(-1, -2));
 
         // 3. Optional Inline Utility Bar (only visible when Find or Batch Shift is opened from More)
         inlinePanelHost = new LinearLayout(activity);
@@ -433,6 +449,12 @@ final class LyricsEditorPage {
 
     private void rebuildSegmentControl() {
         segmentContainer.removeAllViews();
+        if (!showReadingUi) {
+            segmentWrap.setVisibility(View.GONE);
+            activeTab = LyricsEditorModel.EditTab.LYRICS;
+            return;
+        }
+        segmentWrap.setVisibility(View.VISIBLE);
         addSegmentTab(LyricsEditorModel.EditTab.LYRICS, str("editor_tab_lyrics"));
         addSegmentTab(LyricsEditorModel.EditTab.READING, str("editor_tab_reading"));
         addSegmentTab(LyricsEditorModel.EditTab.BOTH, str("editor_tab_both"));
@@ -614,24 +636,29 @@ final class LyricsEditorPage {
         actionRow.setGravity(Gravity.CENTER_VERTICAL);
         actionRow.setPadding(0, dp(10), 0, 0);
 
-        // Mini iOS segmented scope selector
-        LinearLayout scopeSeg = new LinearLayout(activity);
-        scopeSeg.setOrientation(LinearLayout.HORIZONTAL);
-        scopeSeg.setBackground(round(fillTertiary, 8));
-        scopeSeg.setPadding(dp(2), dp(2), dp(2), dp(2));
-        addMiniSegment(scopeSeg, str("editor_tab_lyrics"), findScope == LyricsEditorModel.EditTab.LYRICS, () -> {
+        // Mini iOS segmented scope selector (only shown when pronunciation UI is active)
+        if (showReadingUi) {
+            LinearLayout scopeSeg = new LinearLayout(activity);
+            scopeSeg.setOrientation(LinearLayout.HORIZONTAL);
+            scopeSeg.setBackground(round(fillTertiary, 8));
+            scopeSeg.setPadding(dp(2), dp(2), dp(2), dp(2));
+            addMiniSegment(scopeSeg, str("editor_tab_lyrics"), findScope == LyricsEditorModel.EditTab.LYRICS, () -> {
+                findScope = LyricsEditorModel.EditTab.LYRICS;
+                rebuildInlinePanel();
+            });
+            addMiniSegment(scopeSeg, str("editor_tab_reading"), findScope == LyricsEditorModel.EditTab.READING, () -> {
+                findScope = LyricsEditorModel.EditTab.READING;
+                rebuildInlinePanel();
+            });
+            addMiniSegment(scopeSeg, str("editor_tab_both"), findScope == LyricsEditorModel.EditTab.BOTH, () -> {
+                findScope = LyricsEditorModel.EditTab.BOTH;
+                rebuildInlinePanel();
+            });
+            actionRow.addView(scopeSeg, new LinearLayout.LayoutParams(0, dp(30), 1f));
+        } else {
             findScope = LyricsEditorModel.EditTab.LYRICS;
-            rebuildInlinePanel();
-        });
-        addMiniSegment(scopeSeg, str("editor_tab_reading"), findScope == LyricsEditorModel.EditTab.READING, () -> {
-            findScope = LyricsEditorModel.EditTab.READING;
-            rebuildInlinePanel();
-        });
-        addMiniSegment(scopeSeg, str("editor_tab_both"), findScope == LyricsEditorModel.EditTab.BOTH, () -> {
-            findScope = LyricsEditorModel.EditTab.BOTH;
-            rebuildInlinePanel();
-        });
-        actionRow.addView(scopeSeg, new LinearLayout.LayoutParams(0, dp(30), 1f));
+            actionRow.addView(new View(activity), new LinearLayout.LayoutParams(0, 1, 1f));
+        }
 
         TextView replaceBtn = tintedPillButton(str("editor_replace_all"), accent, accentTint, () -> {
             int count = doc.findAndReplace(findQuery, replaceQuery, findScope, true);
@@ -933,7 +960,7 @@ final class LyricsEditorPage {
             lyricTv.setEllipsize(TextUtils.TruncateAt.END);
             body.addView(lyricTv);
 
-            if (!line.reading.isEmpty()) {
+            if (showReadingUi && !line.reading.isEmpty()) {
                 TextView readPreview = text(line.reading, 13, false, labelSecondary);
                 readPreview.setPadding(0, dp(2), 0, 0);
                 readPreview.setMaxLines(1);
@@ -1085,7 +1112,7 @@ final class LyricsEditorPage {
             activeLyricEditText = lyricEt;
             card.addView(lyricEt, new LinearLayout.LayoutParams(-1, -2));
 
-            if (activeTab == LyricsEditorModel.EditTab.LYRICS && !line.reading.isEmpty()) {
+            if (showReadingUi && activeTab == LyricsEditorModel.EditTab.LYRICS && !line.reading.isEmpty()) {
                 TextView readQuick = text(line.reading, 13, false, labelSecondary);
                 readQuick.setPadding(0, dp(2), 0, dp(2));
                 readQuick.setBackground(ripple(null));
@@ -1100,7 +1127,7 @@ final class LyricsEditorPage {
             }
         }
 
-        if (activeTab == LyricsEditorModel.EditTab.READING || activeTab == LyricsEditorModel.EditTab.BOTH) {
+        if (showReadingUi && (activeTab == LyricsEditorModel.EditTab.READING || activeTab == LyricsEditorModel.EditTab.BOTH)) {
             card.addView(hairline(), verticalMarginParams(dp(8), dp(8)));
 
             LinearLayout readLabelRow = new LinearLayout(activity);
@@ -1109,7 +1136,7 @@ final class LyricsEditorPage {
             readLabelRow.addView(text(str("edit_lyric_reading"), 12, true, labelSecondary),
                     new LinearLayout.LayoutParams(0, -2, 1f));
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (canAutoGenerateReading) {
                 readLabelRow.addView(borderlessTextAction(str("editor_auto_gen_one"), 12, true, accent,
                         () -> autoGenerateSingleReading(index)));
             }
@@ -1646,8 +1673,9 @@ final class LyricsEditorPage {
         }
 
         s.addAction(str("editor_tool_bulk_text"), labelPrimary, false, this::openBulkTextSheet);
+        s.addAction(str("export_lrc_action"), labelPrimary, false, this::openExportCurrentLrc);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (canAutoGenerateReading) {
             s.addAction(
                     romanizingBusy ? str("editor_generating_readings") : str("editor_tool_auto_readings"),
                     labelPrimary, false,
@@ -1831,7 +1859,7 @@ final class LyricsEditorPage {
         }
 
         final int[] bulkMode = new int[]{
-                activeTab == LyricsEditorModel.EditTab.READING ? 1 : 0
+                (showReadingUi && activeTab == LyricsEditorModel.EditTab.READING) ? 1 : 0
         };
 
         // Native iOS Modal Nav Bar
@@ -1907,14 +1935,18 @@ final class LyricsEditorPage {
         final Runnable[] refreshBulkMode = new Runnable[1];
         refreshBulkMode[0] = () -> {
             modeBar.removeAllViews();
+            int modeCount = 1 + (showReadingUi ? 1 : 0) + (doc.synced ? 1 : 0);
+            segWrap.setVisibility(modeCount > 1 ? View.VISIBLE : View.GONE);
             addMiniSegment(modeBar, str("editor_bulk_mode_lyrics"), bulkMode[0] == 0, () -> {
                 bulkMode[0] = 0;
                 refreshBulkMode[0].run();
             });
-            addMiniSegment(modeBar, str("editor_bulk_mode_reading"), bulkMode[0] == 1, () -> {
-                bulkMode[0] = 1;
-                refreshBulkMode[0].run();
-            });
+            if (showReadingUi) {
+                addMiniSegment(modeBar, str("editor_bulk_mode_reading"), bulkMode[0] == 1, () -> {
+                    bulkMode[0] = 1;
+                    refreshBulkMode[0].run();
+                });
+            }
             if (doc.synced) {
                 addMiniSegment(modeBar, str("editor_bulk_mode_lrc"), bulkMode[0] == 2, () -> {
                     bulkMode[0] = 2;
@@ -2210,6 +2242,38 @@ final class LyricsEditorPage {
                 scrollView.smoothScrollTo(0, targetY);
             }
         });
+    }
+
+    private void openExportCurrentLrc() {
+        hideKeyboard();
+        String exportTtml = sheet.displayed;
+        try {
+            LyricsEditTtml.DocumentEdit currentEdit = doc.toDocumentEdit();
+            if (!currentEdit.lines.isEmpty() && sheet.original != null && !sheet.original.isEmpty()) {
+                exportTtml = LyricsEditTtml.applyDocument(
+                        sheet.original,
+                        sheet.baseline,
+                        currentEdit,
+                        doc.wordTimed,
+                        false,
+                        null,
+                        LyricsFeatures.pronunciation());
+            }
+        } catch (Exception ignored) {
+        }
+        LrclibUi.openExportLrcPage(
+                activity,
+                query,
+                sheet.withDisplay(exportTtml),
+                doc.isDirty() || doc.hadSavedEditsInitially());
+    }
+
+    private static boolean hasAnyDocReading(LyricsEditorModel.Document document) {
+        if (document == null) return false;
+        for (LyricsEditorModel.Line l : document.lines) {
+            if (l.reading != null && !l.reading.isEmpty()) return true;
+        }
+        return false;
     }
 
     private void performSave(boolean dismissAfter) {

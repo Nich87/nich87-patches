@@ -270,6 +270,15 @@ public final class LrclibController {
         Context ctx = appContext;
         if (ctx == null) return false;
 
+        if (!LyricsFeatures.lrclib()) {
+            if ((LyricsFeatures.pronunciation() || LyricsFeatures.editor())
+                    && !query.hasOfficialLyrics
+                    && loadCustomLyrics(ctx, viewModel, playbackItem, query)) {
+                return true;
+            }
+            return false;
+        }
+
         long gen = nextGeneration(viewModel);
         boolean lrclibEnabled = LrclibPrefs.isEnabled(ctx);
         boolean bypassLrclib = query.trackKey.equals(vmBypassOfficialTrack.remove(viewModel));
@@ -374,10 +383,12 @@ public final class LrclibController {
         if (query == null) return false;
 
         Context ctx = appContext;
-        if (ctx != null && songInfoPtr == null && loadCustomLyrics(ctx, viewModel, playbackItem, query)) {
+        if (ctx != null && songInfoPtr == null
+                && (LyricsFeatures.lrclib() || LyricsFeatures.pronunciation() || LyricsFeatures.editor())
+                && loadCustomLyrics(ctx, viewModel, playbackItem, query)) {
             return true;
         }
-        if (ctx == null || !LrclibPrefs.isEnabled(ctx)) {
+        if (!LyricsFeatures.lrclib() || ctx == null || !LrclibPrefs.isEnabled(ctx)) {
             recordOfficialState(query.trackKey, songInfoPtr);
             return false;
         }
@@ -533,10 +544,12 @@ public final class LrclibController {
                 recordOfficialState(query.trackKey, songInfoPtr);
             }
         }
-        MAIN.post(() -> {
-            refreshPillForFragment(fragment);
-            refreshAllBadgesNow();
-        });
+        if (LyricsFeatures.lrclib()) {
+            MAIN.post(() -> {
+                refreshPillForFragment(fragment);
+                refreshAllBadgesNow();
+            });
+        }
     }
 
     public static boolean onEditTimedLyric(Object fragment, View anchor, Object nativeLine, Runnable share) {
@@ -660,12 +673,32 @@ public final class LrclibController {
     public static List<?> withSettings(List<?> items) {
         Activity act = settingsOwner.get();
         if (act == null || act.isFinishing()) return items;
+        boolean hasLrclib = LyricsFeatures.lrclib();
+        boolean hasPron = LyricsFeatures.pronunciation();
+        boolean hasEditor = LyricsFeatures.editor();
+        if (!hasLrclib && !hasPron && !hasEditor) return items;
         captureContext(act);
         try {
+            int enabledCount = (hasLrclib ? 1 : 0) + (hasPron ? 1 : 0) + (hasEditor ? 1 : 0);
+            String categoryKey;
+            String entryKey;
+            if (enabledCount > 1) {
+                categoryKey = "settings_category_lyrics";
+                entryKey = "settings_entry_lyrics";
+            } else if (hasLrclib) {
+                categoryKey = "settings_category";
+                entryKey = "settings_entry";
+            } else if (hasPron) {
+                categoryKey = "settings_category_pronunciation";
+                entryKey = "settings_entry_pronunciation";
+            } else {
+                categoryKey = "settings_category_editor";
+                entryKey = "settings_entry_editor";
+            }
             final WeakReference<Activity> ref = settingsOwner;
             Object category = LrclibReflection.createSettingsCategory(
-                    LrclibStrings.text(act, "settings_category"),
-                    LrclibStrings.text(act, "settings_entry"),
+                    LrclibStrings.text(act, categoryKey),
+                    LrclibStrings.text(act, entryKey),
                     () -> {
                         Activity current = ref.get();
                         if (current != null && !current.isFinishing()) {
@@ -677,7 +710,7 @@ public final class LrclibController {
             result.add(Math.min(1, result.size()), category);
             return result;
         } catch (Throwable t) {
-            Log.w(TAG, "Could not add LRCLIB settings category", t);
+            Log.w(TAG, "Could not add lyrics settings category", t);
             return items;
         }
     }
