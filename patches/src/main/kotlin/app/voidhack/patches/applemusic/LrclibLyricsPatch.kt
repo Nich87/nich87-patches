@@ -23,6 +23,7 @@ import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 
 private const val CONTROLLER = "Lapp/voidhack/extension/applemusic/lyrics/LrclibController;"
+private const val INTERLUDES = "Lapp/voidhack/extension/applemusic/lyrics/LyricsInterludes;"
 private const val LYRICS_REFLECTION = "Lapp/voidhack/extension/applemusic/lyrics/LrclibReflection;"
 private const val PLAYBACK_ITEM = "Lcom/apple/android/music/model/PlaybackItem;"
 private const val SONG_INFO_PTR = "Lcom/apple/android/music/ttml/javanative/model/SongInfo\$SongInfoPtr;"
@@ -174,6 +175,7 @@ val lrclibLyricsPatch = bytecodePatch(
         staticLyricsPronunciationPatch,
         lyricsLineEditPatch,
         karaokePronunciationPatch,
+        lyricsInterludePatch,
         lyricsGuideSourceMenuPatch,
         lyricsScrollSyncPatch,
     )
@@ -356,6 +358,7 @@ val lrclibLyricsPatch = bytecodePatch(
         renderWrapper.addInstructions(
             0,
             """
+                invoke-static {p1}, $INTERLUDES->setActiveSong(Ljava/lang/Object;)V
                 invoke-virtual {p0, p1}, $LYRICS_FRAGMENT->$nativeRenderName($SONG_INFO_PTR)V
                 invoke-static {p0, p1}, $CONTROLLER->onLyricsRendered(Ljava/lang/Object;Ljava/lang/Object;)V
                 return-void

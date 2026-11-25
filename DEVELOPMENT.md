@@ -97,10 +97,20 @@ multiple source segments uses their combined interval. If the reading cannot
 be aligned, its whole row highlights with the active line. The pronunciation
 menu shows the source of the guide.
 
-Long-press a lyric line to edit its text or pronunciation. The app stores
-changes locally for the exact lyric source and line. Restore Original removes
-that line's changes. A text edit in word-synced lyrics uses the original
-line interval, and the rest of the song keeps its existing timings.
+Long-press a lyric line (or open the Lyrics Source sheet from the source pill)
+to launch the full-screen Lyrics Editor. Tracks without official or LRCLIB
+lyrics can also be loaded directly by pasting plain text (no timestamps
+required) or LRC text from the Lyrics Source sheet, and unsynced lyrics can be
+converted into line-synced lyrics inside the editor. The editor replaces the
+previous single-line editor with an Apple Music-native interface supporting
+same-page switching between `Lyrics`, `Romaji`, and `Both`, a docked live
+playback bar with tap-to-sync, per-line and cascade/batch timing shifts,
+automatic detection and insertion of interludes (including animated three-dot
+indicators for explicit interludes down to 2.5 seconds), line
+splitting/insertion/deletion, find & replace, bulk text/LRC editing, undo/redo,
+and one-tap restore to original. Changes are stored locally per lyric source
+document and are reflected when exporting to LRC. Existing legacy per-line
+edits remain backwards compatible.
 
 ### On-device vocal separation
 

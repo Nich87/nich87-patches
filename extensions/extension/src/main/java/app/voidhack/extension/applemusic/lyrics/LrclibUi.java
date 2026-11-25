@@ -15,7 +15,10 @@ import android.graphics.drawable.RippleDrawable;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.Editable;
+import android.text.InputType;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -228,6 +231,15 @@ final class LrclibUi {
             ctaParams.setMargins(0, page.dp(12), 0, page.dp(4));
             content.addView(searchBtn, ctaParams);
 
+            // Paste plain text or LRC lyrics directly (works for songs without lyrics too)
+            TextView pasteBtn = page.secondaryButton(LrclibStrings.text(activity, "paste_lyrics_action"));
+            pasteBtn.setOnClickListener(v -> openPasteLyricsPage(activity, fragment, query, () -> {
+                page.dismiss();
+            }));
+            LinearLayout.LayoutParams pasteCtaParams = new LinearLayout.LayoutParams(-1, page.dp(46));
+            pasteCtaParams.setMargins(0, page.dp(6), 0, page.dp(4));
+            content.addView(pasteBtn, pasteCtaParams);
+
             // Load local LRC file button (secondary CTA)
             TextView localBtn = page.secondaryButton(LrclibStrings.text(activity, "local_pick_action"));
             localBtn.setOnClickListener(v -> LrcPickerFragment.pickFile(activity, (fileName, decoded) -> {
@@ -237,14 +249,23 @@ final class LrclibUi {
             localCtaParams.setMargins(0, page.dp(6), 0, page.dp(4));
             content.addView(localBtn, localCtaParams);
 
-            // Per-song edited lines review/restore (shown whenever current lyrics have edited lines)
+            // Full-song Lyrics Editor CTA + edited lines review (whenever lyrics are loaded)
             LyricsLineEditor.Sheet activeSheet = LyricsLineEditor.getActiveSheet(fragment, query.trackKey);
             List<LyricsEditTtml.EditedLine> editedLines = LyricsLineEditor.listEditedLines(activity, activeSheet);
-            if (!editedLines.isEmpty()) {
+            if (activeSheet != null && activeSheet.displayed != null && !activeSheet.displayed.isEmpty()) {
+                TextView editorBtn = page.secondaryButton(LrclibStrings.text(activity, "open_lyrics_editor_action"));
+                editorBtn.setOnClickListener(v -> LyricsLineEditor.openEditorForCurrentTrack(
+                        activity, fragment, query, activeSheet, () -> page.dismiss()));
+                LinearLayout.LayoutParams editorCtaParams = new LinearLayout.LayoutParams(-1, page.dp(46));
+                editorCtaParams.setMargins(0, page.dp(6), 0, page.dp(4));
+                content.addView(editorBtn, editorCtaParams);
+            }
+            if (!editedLines.isEmpty() || LyricsLineEditor.hasEditsForSheet(activity, activeSheet)) {
                 LinearLayout editsCard = page.card();
+                int displayCount = editedLines.isEmpty() ? 1 : editedLines.size();
                 page.addActionRow(
                         editsCard,
-                        LrclibStrings.text(activity, "review_edited_lines", editedLines.size()),
+                        LrclibStrings.text(activity, "review_edited_lines", displayCount),
                         page.accent,
                         () -> openEditedLinesPage(activity, fragment, query, activeSheet, rebuild[0])
                 );
@@ -668,6 +689,186 @@ final class LrclibUi {
         };
 
         render[0].run();
+    }
+
+    // =========================================================================
+    // 2b-2. Paste Plain Text or LRC Lyrics Page
+    // =========================================================================
+
+    private static void openPasteLyricsPage(
+            final Activity activity,
+            final Object fragment,
+            final LrclibModels.TrackQuery query,
+            final Runnable onApplied) {
+        final Page page = new Page(activity, LrclibStrings.text(activity, "paste_lyrics_title"));
+        final LinearLayout body = new LinearLayout(activity);
+        body.setOrientation(LinearLayout.VERTICAL);
+        body.setPadding(page.dp(16), page.dp(12), page.dp(16), page.dp(12));
+
+        // Subtle track context + clipboard actions row
+        LinearLayout topRow = new LinearLayout(activity);
+        topRow.setOrientation(LinearLayout.HORIZONTAL);
+        topRow.setGravity(Gravity.CENTER_VERTICAL);
+        topRow.setPadding(page.dp(2), 0, page.dp(2), page.dp(8));
+
+        String trackMeta = query.title;
+        if (!query.artist.isEmpty()) {
+            trackMeta = trackMeta.isEmpty() ? query.artist : (trackMeta + " · " + query.artist);
+        }
+        TextView trackTv = page.text(trackMeta, 13, false, page.secondary);
+        trackTv.setSingleLine(true);
+        trackTv.setEllipsize(TextUtils.TruncateAt.END);
+        topRow.addView(trackTv, new LinearLayout.LayoutParams(0, -2, 1f));
+
+        final TextView clearBtn = page.text(LrclibStrings.text(activity, "paste_lyrics_clear"), 14, false, page.secondary);
+        clearBtn.setPadding(page.dp(10), page.dp(6), page.dp(10), page.dp(6));
+        clearBtn.setBackground(page.ripple(null));
+        clearBtn.setClickable(true);
+        clearBtn.setFocusable(true);
+        clearBtn.setVisibility(View.GONE);
+        topRow.addView(clearBtn);
+
+        TextView pasteClipboardBtn = page.text(
+                LrclibStrings.text(activity, "paste_lyrics_from_clipboard"), 14, true, page.accent);
+        pasteClipboardBtn.setPadding(page.dp(10), page.dp(6), page.dp(4), page.dp(6));
+        pasteClipboardBtn.setBackground(page.ripple(null));
+        pasteClipboardBtn.setClickable(true);
+        pasteClipboardBtn.setFocusable(true);
+        topRow.addView(pasteClipboardBtn);
+        body.addView(topRow, new LinearLayout.LayoutParams(-1, -2));
+
+        // Live format status caption
+        final TextView statusTv = page.text(
+                LrclibStrings.text(activity, "paste_lyrics_status_empty"), 12, false, page.secondary);
+        statusTv.setPadding(page.dp(2), 0, page.dp(2), page.dp(8));
+        body.addView(statusTv, new LinearLayout.LayoutParams(-1, -2));
+
+        // Optional unsynced switch (shown only when pasted text contains LRC timestamps)
+        final boolean[] forceUnsynced = new boolean[]{false};
+        final LinearLayout unsyncedCard = page.card();
+        unsyncedCard.setVisibility(View.GONE);
+        final Runnable[] refreshState = new Runnable[1];
+        page.addSwitchRow(
+                unsyncedCard,
+                LrclibStrings.text(activity, "local_force_unsynced"),
+                LrclibStrings.text(activity, "local_force_unsynced_summary"),
+                false,
+                checked -> {
+                    forceUnsynced[0] = checked;
+                    if (refreshState[0] != null) refreshState[0].run();
+                });
+        LinearLayout.LayoutParams switchLp = new LinearLayout.LayoutParams(-1, -2);
+        switchLp.setMargins(0, 0, 0, page.dp(10));
+        body.addView(unsyncedCard, switchLp);
+
+        // Clean Apple Music surface multi-line text area
+        final EditText input = new EditText(activity);
+        input.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        input.setTypeface(page.regular);
+        input.setTextSize(15);
+        input.setTextColor(page.primary);
+        input.setHintTextColor(page.secondary);
+        input.setHint(LrclibStrings.text(activity, "paste_lyrics_hint"));
+        input.setGravity(Gravity.TOP | Gravity.START);
+        input.setLineSpacing(page.dp(4), 1f);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        input.setHorizontallyScrolling(false);
+        input.setImeOptions(EditorInfo.IME_FLAG_NO_EXTRACT_UI);
+        input.setBackground(page.round(page.elevatedSurface, 12));
+        input.setPadding(page.dp(14), page.dp(12), page.dp(14), page.dp(12));
+        body.addView(input, new LinearLayout.LayoutParams(-1, 0, 1f));
+
+        page.setBody(body);
+
+        final boolean[] validLyrics = new boolean[]{false};
+        final TextView applyBtn = page.addFooterButton(LrclibStrings.text(activity, "apply_lyrics"), false, () -> {
+            String raw = input.getText().toString();
+            if (!validLyrics[0] || raw.trim().isEmpty()) {
+                Toast.makeText(activity, LrclibStrings.text(activity, "paste_lyrics_invalid"), Toast.LENGTH_SHORT).show();
+                return;
+            }
+            String label = LrclibStrings.text(activity, "paste_lyrics_label");
+            boolean saved = LrclibController.applyLocalLrcFile(
+                    activity, fragment, query, label, raw, forceUnsynced[0]);
+            if (!saved) {
+                Toast.makeText(activity, LrclibStrings.text(activity, "local_save_error"), Toast.LENGTH_LONG).show();
+                return;
+            }
+            page.dismiss();
+            if (onApplied != null) onApplied.run();
+        });
+
+        refreshState[0] = () -> {
+            String raw = input.getText() == null ? "" : input.getText().toString();
+            boolean hasText = !raw.trim().isEmpty();
+            clearBtn.setVisibility(hasText ? View.VISIBLE : View.GONE);
+            if (!hasText) {
+                validLyrics[0] = false;
+                unsyncedCard.setVisibility(View.GONE);
+                statusTv.setText(LrclibStrings.text(activity, "paste_lyrics_status_empty"));
+                statusTv.setTextColor(page.secondary);
+                applyBtn.setEnabled(false);
+                applyBtn.setAlpha(0.45f);
+                return;
+            }
+            LocalLrcParser.LrcMetadata meta = LocalLrcParser.parseMetadata(raw);
+            unsyncedCard.setVisibility(meta.hasSyncedTimestamps ? View.VISIBLE : View.GONE);
+            boolean allowWord = LrclibPrefs.isWordSyncEnabled(activity);
+            LrclibParser.PreparedRecord prep = LocalLrcParser.prepareLocalLrc(
+                    raw, query.durationSec, allowWord, forceUnsynced[0]);
+            int lines = (prep.parsed != null) ? prep.parsed.lines.size() : 0;
+            validLyrics[0] = lines > 0;
+            if (!validLyrics[0]) {
+                statusTv.setText(LrclibStrings.text(activity, "paste_lyrics_invalid"));
+                statusTv.setTextColor(page.secondary);
+            } else if (prep.sourceType == LrclibModels.LyricsSource.LOCAL_PLAIN) {
+                statusTv.setText(LrclibStrings.text(activity, "paste_lyrics_status_plain", lines));
+                statusTv.setTextColor(page.secondary);
+            } else {
+                statusTv.setText(LrclibStrings.text(activity, "paste_lyrics_status_synced", lines));
+                statusTv.setTextColor(page.accent);
+            }
+            applyBtn.setEnabled(validLyrics[0]);
+            applyBtn.setAlpha(validLyrics[0] ? 1f : 0.45f);
+        };
+
+        input.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                refreshState[0].run();
+            }
+        });
+
+        clearBtn.setOnClickListener(v -> {
+            input.setText("");
+            refreshState[0].run();
+        });
+
+        pasteClipboardBtn.setOnClickListener(v -> {
+            ClipboardManager cm = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
+            CharSequence pasted = null;
+            if (cm != null && cm.hasPrimaryClip()) {
+                ClipData clip = cm.getPrimaryClip();
+                if (clip != null && clip.getItemCount() > 0) {
+                    pasted = clip.getItemAt(0).coerceToText(activity);
+                }
+            }
+            if (pasted == null || pasted.toString().trim().isEmpty()) {
+                Toast.makeText(activity, LrclibStrings.text(activity, "paste_lyrics_clipboard_empty"), Toast.LENGTH_SHORT).show();
+                return;
+            }
+            input.setText(pasted.toString());
+            input.setSelection(input.getText().length());
+            refreshState[0].run();
+        });
+
+        refreshState[0].run();
     }
 
     // =========================================================================
@@ -1186,6 +1387,18 @@ final class LrclibUi {
             restoreAllBtn.setEnabled(true);
             restoreAllBtn.setAlpha(1f);
 
+            LyricsEditTtml.DocumentEdit v2Doc = LyricsEdits.loadDocument(activity, sheet.documentKey);
+            LinearLayout editCtaCard = page.card();
+            page.addActionRow(
+                    editCtaCard,
+                    LrclibStrings.text(activity, "open_lyrics_editor_action"),
+                    page.accent,
+                    () -> LyricsLineEditor.openEditorForCurrentTrack(activity, fragment, query, sheet, () -> {
+                        if (onChanged != null) onChanged.run();
+                        page.dismiss();
+                    }));
+            content.addView(editCtaCard, page.cardParams());
+
             for (final LyricsEditTtml.EditedLine entry : list) {
                 LinearLayout card = page.card();
 
@@ -1197,26 +1410,31 @@ final class LrclibUi {
                 if (entry.startMs >= 0L) {
                     lineMeta += " · " + formatShortTimestamp(entry.startMs);
                 }
+                if (entry.timingChanged) {
+                    lineMeta += " · " + LrclibStrings.text(activity, "editor_timing_changed_badge");
+                }
                 topRow.addView(page.text(lineMeta, 12, true, page.secondary),
                         new LinearLayout.LayoutParams(0, -2, 1f));
 
-                TextView restoreBtn = page.text(LrclibStrings.text(activity, "reset_lyric_line"), 13, true, page.accent);
-                restoreBtn.setPadding(page.dp(10), page.dp(4), page.dp(2), page.dp(4));
-                restoreBtn.setBackground(page.ripple(null));
-                restoreBtn.setClickable(true);
-                restoreBtn.setFocusable(true);
-                restoreBtn.setOnClickListener(v -> {
-                    if (LyricsLineEditor.restoreLine(activity, sheet.documentKey, entry.index)) {
-                        LrclibController.reloadCurrentTrack(activity, fragment, false);
-                        if (onChanged != null) onChanged.run();
-                        if (LyricsLineEditor.listEditedLines(activity, sheet).isEmpty()) {
-                            page.dismiss();
-                        } else {
-                            rebuild[0].run();
+                if (v2Doc == null) {
+                    TextView restoreBtn = page.text(LrclibStrings.text(activity, "reset_lyric_line"), 13, true, page.accent);
+                    restoreBtn.setPadding(page.dp(10), page.dp(4), page.dp(2), page.dp(4));
+                    restoreBtn.setBackground(page.ripple(null));
+                    restoreBtn.setClickable(true);
+                    restoreBtn.setFocusable(true);
+                    restoreBtn.setOnClickListener(v -> {
+                        if (LyricsLineEditor.restoreLine(activity, sheet.documentKey, entry.index)) {
+                            LrclibController.reloadCurrentTrack(activity, fragment, false);
+                            if (onChanged != null) onChanged.run();
+                            if (LyricsLineEditor.listEditedLines(activity, sheet).isEmpty()) {
+                                page.dismiss();
+                            } else {
+                                rebuild[0].run();
+                            }
                         }
-                    }
-                });
-                topRow.addView(restoreBtn);
+                    });
+                    topRow.addView(restoreBtn);
+                }
                 card.addView(topRow);
 
                 appendDiffSection(
@@ -1400,27 +1618,32 @@ final class LrclibUi {
                 if (line.startMs >= 0L) {
                     lineMeta += " · " + formatShortTimestamp(line.startMs);
                 }
+                if (line.timingChanged) {
+                    lineMeta += " · " + LrclibStrings.text(activity, "editor_timing_changed_badge");
+                }
                 topRow.addView(page.text(lineMeta, 12, true, page.secondary),
                         new LinearLayout.LayoutParams(0, -2, 1f));
 
-                TextView restoreBtn = page.text(LrclibStrings.text(activity, "reset_lyric_line"), 13, true, page.accent);
-                restoreBtn.setPadding(page.dp(10), page.dp(4), page.dp(2), page.dp(4));
-                restoreBtn.setBackground(page.ripple(null));
-                restoreBtn.setClickable(true);
-                restoreBtn.setFocusable(true);
-                restoreBtn.setOnClickListener(v -> {
-                    if (LyricsLineEditor.restoreLine(activity, documentKey, line.index)) {
-                        LrclibController.reloadCurrentTrack(activity, null, false);
-                        if (onChanged != null) onChanged.run();
-                        LyricsEdits.DocumentRecord remaining = LyricsEdits.getDocument(activity, documentKey);
-                        if (remaining == null || remaining.lines.isEmpty()) {
-                            page.dismiss();
-                        } else {
-                            rebuild[0].run();
+                if (!rec.isFullDocumentEdit) {
+                    TextView restoreBtn = page.text(LrclibStrings.text(activity, "reset_lyric_line"), 13, true, page.accent);
+                    restoreBtn.setPadding(page.dp(10), page.dp(4), page.dp(2), page.dp(4));
+                    restoreBtn.setBackground(page.ripple(null));
+                    restoreBtn.setClickable(true);
+                    restoreBtn.setFocusable(true);
+                    restoreBtn.setOnClickListener(v -> {
+                        if (LyricsLineEditor.restoreLine(activity, documentKey, line.index)) {
+                            LrclibController.reloadCurrentTrack(activity, null, false);
+                            if (onChanged != null) onChanged.run();
+                            LyricsEdits.DocumentRecord remaining = LyricsEdits.getDocument(activity, documentKey);
+                            if (remaining == null || remaining.lines.isEmpty()) {
+                                page.dismiss();
+                            } else {
+                                rebuild[0].run();
+                            }
                         }
-                    }
-                });
-                topRow.addView(restoreBtn);
+                    });
+                    topRow.addView(restoreBtn);
+                }
                 card.addView(topRow);
 
                 appendDiffSection(
@@ -1623,6 +1846,7 @@ final class LrclibUi {
         final int secondary;
         final int accent;
         final int cardFill;
+        final int elevatedSurface;
         final int separator;
         final int systemGray;
         final Typeface regular;
@@ -1635,6 +1859,8 @@ final class LrclibUi {
             this.secondary = resolveColor("secondary_label_color", 0xFFAEAEB2);
             this.accent = resolveColor("key_color", 0xFFFA2D48);
             this.cardFill = resolveColor("tertiary_fill_color", 0xFF2C2C2E);
+            this.elevatedSurface = resolveColor("secondary_background_color",
+                    Color.luminance(background) > 0.5 ? 0xFFF2F2F7 : 0xFF1C1C1E);
             this.separator = resolveColor("separator_color", 0x338E8E93);
             this.systemGray = resolveColor("system_gray", 0xFF8E8E93);
             this.regular = resolveFont("regular", Typeface.DEFAULT);
