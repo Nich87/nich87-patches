@@ -508,6 +508,7 @@ public final class LrclibController {
     public static void onLyricsRendered(Object fragment, Object songInfoPtr) {
         if (fragment == null) return;
         LyricsLineEditor.bind(fragment, songInfoPtr);
+        LyricsScrollSync.onLyricsRendered(fragment, songInfoPtr);
         Activity act = LrclibReflection.getActivity(fragment);
         if (act != null) captureContext(act);
         Object vm = LrclibReflection.getLyricsViewModelFromFragment(fragment);

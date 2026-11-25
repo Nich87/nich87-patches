@@ -175,6 +175,7 @@ val lrclibLyricsPatch = bytecodePatch(
         lyricsLineEditPatch,
         karaokePronunciationPatch,
         lyricsGuideSourceMenuPatch,
+        lyricsScrollSyncPatch,
     )
     compatibleWith(appleMusicCompatibility)
     extendWith("extensions/extension.mpe")
