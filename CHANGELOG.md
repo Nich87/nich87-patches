@@ -1,3 +1,14 @@
+## [1.8.0-dev.2](https://github.com/Nich87/nich87-patches/compare/v1.8.0-dev.1...v1.8.0-dev.2) (2026-11-25)
+
+### ✨ New Features
+
+* Add edited lyric line review and restore controls ([94ea59e](https://github.com/Nich87/nich87-patches/commit/94ea59e7b18a0bfa2d01e986753176c67708ed5c))
+* Add LRC export for displayed lyrics ([d2aee8a](https://github.com/Nich87/nich87-patches/commit/d2aee8a13fe504168fab90bd4add471984fd63a0))
+
+### 🐛 Bug Fixes
+
+* Restore synced lyrics auto-return and tracking after scrolling ([5fd2ad6](https://github.com/Nich87/nich87-patches/commit/5fd2ad63e95106029790ad2e4be1333784ac33f8))
+
 ## [1.8.0-dev.1](https://github.com/Nich87/nich87-patches/compare/v1.7.0...v1.8.0-dev.1) (2026-11-24)
 
 ### ✨ New Features
