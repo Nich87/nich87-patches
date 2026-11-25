@@ -43,9 +43,9 @@ Enable pre-releases for development builds from `dev`.
 ## Patches
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.9.0-dev.1](https://github.com/Nich87/nich87-patches/releases/tag/v1.9.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;7 patches total
+> **[v1.9.0-dev.2](https://github.com/Nich87/nich87-patches/releases/tag/v1.9.0-dev.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;9 patches total
 <details open>
-<summary>📦 Apple Music&nbsp;&nbsp;•&nbsp;&nbsp;6 patches</summary>
+<summary>📦 Apple Music&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
 <br>
 
 **Package name:** `com.apple.android.music`
@@ -58,9 +58,11 @@ Enable pre-releases for development builds from `dev`.
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
 | [Custom font](#custom-font) | Replaces Apple Music's font across views, Compose screens, and lyrics using imported .ttf/.otf/.ttc files or system fonts, with optional SF Pro Latin preservation and per-scope settings. |  |
-| [LRCLIB lyrics](#lrclib-lyrics) | Loads synced and unsynced local LRC files (per-song or auto-matched folder) and fetches lyrics from LRCLIB with per-song overrides, timing offsets, and a source indicator. Optionally generates pronunciation guides on-device. |  |
+| [LRCLIB lyrics](#lrclib-lyrics) | Loads synced and unsynced local LRC files (per-song or auto-matched folder), pasted plain-text/LRC lyrics, and LRCLIB lyrics with per-song overrides, timing offsets, LRC export, and a source indicator. |  |
 | [Library import, export and downloads](#library-import-export-and-downloads) | Adds JSON library and playlist backups, additive import, and a native download action for the entire library. |  |
 | [Liquid Glass bottom bar](#liquid-glass-bottom-bar) | Adds live refractive glass to Apple Music's mini-player and bottom tabs, an animated selection lens, and a glass transition between the mini-player and Now Playing. Refraction requires Android 13 or newer. |  |
+| [Lyrics editor](#lyrics-editor) | Adds an Apple Music-style full-song lyrics editor (accessed by long-pressing any lyric line) with batch editing, timing adjustments, interlude insertion with native three-dot indicators, LRC export, and edit restore controls. |  |
+| [On-device pronunciation guides](#on-device-pronunciation-guides) | Generates on-device pronunciation guides for Apple Music, custom, and external lyrics (offline Japanese Kuromoji dictionary and Android ICU) with word-synced karaoke and unsynced lyrics support. |  |
 | [On-device vocal separation](#on-device-vocal-separation) | Adds a vocal and accompaniment mix slider to the lyrics screen. Supports stereo and Dolby Atmos PCM after a one-time model download. |  |
 | [Repair Japanese library metadata](#repair-japanese-library-metadata) | Finds romanized library metadata and repairs selected songs using Japanese catalog data, preserving library entries and syncing changes to the account. |  |
 

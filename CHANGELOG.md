@@ -1,3 +1,9 @@
+## [1.9.0-dev.2](https://github.com/Nich87/nich87-patches/compare/v1.9.0-dev.1...v1.9.0-dev.2) (2026-11-25)
+
+### ✨ New Features
+
+* Split Apple Music lyrics features into independent patches ([0101366](https://github.com/Nich87/nich87-patches/commit/0101366b368781a88c4db5918d9c7e9e857cd4ac))
+
 ## [1.9.0-dev.1](https://github.com/Nich87/nich87-patches/compare/v1.8.0...v1.9.0-dev.1) (2026-11-25)
 
 ### ✨ New Features
