@@ -43,6 +43,7 @@ public final class LyricsLineGestures {
                     .getMethod("voidhackTimedLyricTarget", View.class, adapterType)
                     .invoke(null, anchor, adapter);
             if (current == null || current[1] != target[1] || !current[2].equals(target[2])) return;
+            LyricsScrollSync.onShareLaunching(fragment);
             fragmentClass.getMethod("voidhackNativeShareLyricLine", fragmentClass, View.class, adapterType)
                     .invoke(null, fragment, anchor, adapter);
         } catch (ReflectiveOperationException | RuntimeException e) {
