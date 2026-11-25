@@ -159,4 +159,20 @@
     <string name="voidhack_lrclib_local_priority_missing_unsynced_desc">公式歌詞がない曲、または公式が非同期でローカル LRC が同期歌詞のときに使用します。</string>
     <string name="voidhack_lrclib_local_priority_missing_only">公式の歌詞がない曲のみ</string>
     <string name="voidhack_lrclib_local_priority_missing_only_desc">Apple Music 公式の歌詞がない曲でのみローカルフォルダを使用します。</string>
+    <string name="voidhack_lrclib_export_lrc_action">LRC ファイルとしてエクスポート…</string>
+    <string name="voidhack_lrclib_export_lrc_title">LRC エクスポート</string>
+    <string name="voidhack_lrclib_export_includes_edits">行編集を反映</string>
+    <string name="voidhack_lrclib_export_format_title">出力形式</string>
+    <string name="voidhack_lrclib_export_format_line">行同期 LRC（標準）</string>
+    <string name="voidhack_lrclib_export_format_line_desc">多くのプレイヤーで使える標準的な [mm:ss.xx] 形式です。</string>
+    <string name="voidhack_lrclib_export_format_word">単語同期 LRC（拡張形式）</string>
+    <string name="voidhack_lrclib_export_format_word_desc">カラオケ同期用の &lt;mm:ss.xx&gt; 単語タイムスタンプを含めます。</string>
+    <string name="voidhack_lrclib_export_format_unsynced">非同期 LRC（テキストのみ）</string>
+    <string name="voidhack_lrclib_export_format_unsynced_desc">タイムスタンプを含めないメタタグ＋歌詞テキストを出力します。</string>
+    <string name="voidhack_lrclib_export_copy_clipboard">LRC テキストをコピー</string>
+    <string name="voidhack_lrclib_export_copied">LRC テキストをクリップボードにコピーしました。</string>
+    <string name="voidhack_lrclib_export_save_button">LRC ファイルを保存…</string>
+    <string name="voidhack_lrclib_export_saved">%1$s を保存しました</string>
+    <string name="voidhack_lrclib_export_save_failed">LRC ファイルを保存できませんでした。</string>
+    <string name="voidhack_lrclib_export_unavailable">この曲にはエクスポート可能な歌詞がありません。</string>
 </resources>

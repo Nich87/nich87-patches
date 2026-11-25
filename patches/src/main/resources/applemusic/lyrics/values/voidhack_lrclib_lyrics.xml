@@ -159,4 +159,20 @@
     <string name="voidhack_lrclib_local_priority_missing_unsynced_desc">Use local folder LRC when official lyrics are missing, or when official lyrics are unsynced and the local LRC is synced.</string>
     <string name="voidhack_lrclib_local_priority_missing_only">Missing official only</string>
     <string name="voidhack_lrclib_local_priority_missing_only_desc">Only use local folder LRC when Apple Music has no official lyrics.</string>
+    <string name="voidhack_lrclib_export_lrc_action">Export as LRC file…</string>
+    <string name="voidhack_lrclib_export_lrc_title">Export LRC</string>
+    <string name="voidhack_lrclib_export_includes_edits">Includes line edits</string>
+    <string name="voidhack_lrclib_export_format_title">Export format</string>
+    <string name="voidhack_lrclib_export_format_line">Line-synced LRC (Standard)</string>
+    <string name="voidhack_lrclib_export_format_line_desc">Standard [mm:ss.xx] timestamps compatible with most players.</string>
+    <string name="voidhack_lrclib_export_format_word">Word-synced LRC (Enhanced)</string>
+    <string name="voidhack_lrclib_export_format_word_desc">Includes &lt;mm:ss.xx&gt; word-level timestamps for karaoke sync.</string>
+    <string name="voidhack_lrclib_export_format_unsynced">Unsynced LRC (Plain text)</string>
+    <string name="voidhack_lrclib_export_format_unsynced_desc">Metadata headers and plain lyrics text without timestamps.</string>
+    <string name="voidhack_lrclib_export_copy_clipboard">Copy LRC text</string>
+    <string name="voidhack_lrclib_export_copied">Copied LRC text to clipboard.</string>
+    <string name="voidhack_lrclib_export_save_button">Save LRC file…</string>
+    <string name="voidhack_lrclib_export_saved">Saved %1$s</string>
+    <string name="voidhack_lrclib_export_save_failed">Could not save the LRC file.</string>
+    <string name="voidhack_lrclib_export_unavailable">No exportable lyrics are loaded for this song.</string>
 </resources>

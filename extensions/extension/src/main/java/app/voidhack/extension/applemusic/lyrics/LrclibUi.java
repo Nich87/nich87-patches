@@ -2,6 +2,8 @@ package app.voidhack.extension.applemusic.lyrics;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
@@ -262,8 +264,14 @@ final class LrclibUi {
             );
             content.addView(offsetCard, page.cardParams());
 
-            // Utility actions: Reload & Settings
+            // Utility actions: Export LRC, Reload & Settings
             LinearLayout utilCard = page.card();
+            if (activeSheet != null && activeSheet.displayed != null && !activeSheet.displayed.isEmpty()) {
+                page.addActionRow(utilCard, LrclibStrings.text(activity, "export_lrc_action"), page.primary, () -> {
+                    openExportLrcPage(activity, query, activeSheet, !editedLines.isEmpty());
+                });
+                utilCard.addView(page.separator(), page.sepParams());
+            }
             page.addActionRow(utilCard, LrclibStrings.text(activity, "reload_action"), page.accent, () -> {
                 LrclibController.reloadCurrentTrack(activity, fragment, true);
                 page.dismiss();
@@ -657,6 +665,120 @@ final class LrclibUi {
             lyricsTv.setPadding(page.dp(4), page.dp(8), page.dp(4), page.dp(16));
             lyricsTv.setTextIsSelectable(true);
             content.addView(lyricsTv);
+        };
+
+        render[0].run();
+    }
+
+    // =========================================================================
+    // 2c. LRC Export Preview & Save Page
+    // =========================================================================
+
+    private static void openExportLrcPage(
+            final Activity activity,
+            final LrclibModels.TrackQuery query,
+            final LyricsLineEditor.Sheet sheet,
+            final boolean includesEdits) {
+        final LyricsLrcExporter.Capabilities caps = LyricsLrcExporter.inspect(sheet.displayed);
+        if (caps.lineCount <= 0) {
+            Toast.makeText(activity, LrclibStrings.text(activity, "export_unavailable"), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        final Page page = new Page(activity, LrclibStrings.text(activity, "export_lrc_title"));
+        final LinearLayout content = page.createScrollBody();
+        final String suggestedName = LyricsLrcExporter.suggestFileName(query);
+        final LyricsLrcExporter.Format[] selectedFormat = new LyricsLrcExporter.Format[]{caps.defaultFormat()};
+        final String[] generated = new String[]{""};
+
+        page.addFooterButton(LrclibStrings.text(activity, "export_save_button"), true, () -> {
+            if (!generated[0].isEmpty()) {
+                LrcPickerFragment.saveFile(activity, suggestedName, generated[0], savedName -> {});
+            }
+        });
+
+        final Runnable[] render = new Runnable[1];
+        render[0] = () -> {
+            content.removeAllViews();
+            generated[0] = LyricsLrcExporter.export(sheet.displayed, query, selectedFormat[0]);
+
+            LinearLayout header = page.card();
+            TextView nameTv = page.text(suggestedName, 16, true, page.primary);
+            nameTv.setMaxLines(2);
+            nameTv.setEllipsize(TextUtils.TruncateAt.END);
+            header.addView(nameTv);
+
+            String metaLine = LrclibStrings.text(activity, "local_preview_meta", caps.lineCount, "UTF-8");
+            if (includesEdits) {
+                metaLine += " · " + LrclibStrings.text(activity, "export_includes_edits");
+            }
+            TextView metaTv = page.text(metaLine, 12, false, page.secondary);
+            metaTv.setPadding(0, page.dp(4), 0, 0);
+            header.addView(metaTv);
+            content.addView(header, page.cardParams());
+
+            if (caps.hasLineTiming) {
+                LinearLayout formatCard = page.card();
+                TextView fmtHeader = page.text(LrclibStrings.text(activity, "export_format_title"), 13, true, page.secondary);
+                fmtHeader.setPadding(0, 0, 0, page.dp(6));
+                formatCard.addView(fmtHeader);
+
+                page.addRadioRow(
+                        formatCard,
+                        LrclibStrings.text(activity, "export_format_line"),
+                        LrclibStrings.text(activity, "export_format_line_desc"),
+                        selectedFormat[0] == LyricsLrcExporter.Format.LINE_SYNCED,
+                        true,
+                        () -> {
+                            selectedFormat[0] = LyricsLrcExporter.Format.LINE_SYNCED;
+                            render[0].run();
+                        }
+                );
+                if (caps.hasWordTiming) {
+                    formatCard.addView(page.separator(), page.sepParams());
+                    page.addRadioRow(
+                            formatCard,
+                            LrclibStrings.text(activity, "export_format_word"),
+                            LrclibStrings.text(activity, "export_format_word_desc"),
+                            selectedFormat[0] == LyricsLrcExporter.Format.WORD_SYNCED,
+                            true,
+                            () -> {
+                                selectedFormat[0] = LyricsLrcExporter.Format.WORD_SYNCED;
+                                render[0].run();
+                            }
+                    );
+                }
+                formatCard.addView(page.separator(), page.sepParams());
+                page.addRadioRow(
+                        formatCard,
+                        LrclibStrings.text(activity, "export_format_unsynced"),
+                        LrclibStrings.text(activity, "export_format_unsynced_desc"),
+                        selectedFormat[0] == LyricsLrcExporter.Format.UNSYNCED,
+                        true,
+                        () -> {
+                            selectedFormat[0] = LyricsLrcExporter.Format.UNSYNCED;
+                            render[0].run();
+                        }
+                );
+                content.addView(formatCard, page.cardParams());
+            }
+
+            LinearLayout copyCard = page.card();
+            page.addActionRow(copyCard, LrclibStrings.text(activity, "export_copy_clipboard"), page.accent, () -> {
+                ClipboardManager cm = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
+                if (cm != null && !generated[0].isEmpty()) {
+                    cm.setPrimaryClip(ClipData.newPlainText(suggestedName, generated[0]));
+                    Toast.makeText(activity, LrclibStrings.text(activity, "export_copied"), Toast.LENGTH_SHORT).show();
+                }
+            });
+            content.addView(copyCard, page.cardParams());
+
+            TextView previewTv = page.text(generated[0], 13, false, page.primary);
+            previewTv.setTypeface(Typeface.MONOSPACE);
+            previewTv.setLineSpacing(page.dp(3), 1f);
+            previewTv.setPadding(page.dp(4), page.dp(10), page.dp(4), page.dp(16));
+            previewTv.setTextIsSelectable(true);
+            content.addView(previewTv);
         };
 
         render[0].run();
