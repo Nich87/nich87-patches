@@ -91,6 +91,12 @@ final class LyricsEditSheet {
 
     static void showEditor(Activity activity, String lyric, String reading,
             BiPredicate<String, String> save, BooleanSupplier restore, Runnable afterSave) {
+        showEditor(activity, lyric, reading, null, null, save, restore, afterSave);
+    }
+
+    static void showEditor(Activity activity, String lyric, String reading,
+            String originalLyric, String originalReading,
+            BiPredicate<String, String> save, BooleanSupplier restore, Runnable afterSave) {
         LyricsEditSheet sheet = new LyricsEditSheet(activity);
         Button cancel = sheet.action(activity.getString(android.R.string.cancel), sheet.accent, false);
         Button saveButton = sheet.action(LrclibStrings.text(activity, "save"), sheet.accent, true);
@@ -121,6 +127,23 @@ final class LyricsEditSheet {
         });
         if (restore != null) {
             sheet.addDivider(fields);
+            boolean showOrigLyric = originalLyric != null && !originalLyric.isEmpty() && !originalLyric.equals(lyric);
+            boolean showOrigReading = originalReading != null && !originalReading.isEmpty()
+                    && !originalReading.equals(reading);
+            if (showOrigLyric) {
+                TextView origTv = sheet.label(
+                        LrclibStrings.text(activity, "edit_original_line", originalLyric),
+                        13, sheet.secondary, sheet.regular);
+                origTv.setPadding(0, sheet.dp(10), 0, showOrigReading ? sheet.dp(2) : sheet.dp(4));
+                fields.addView(origTv, new LinearLayout.LayoutParams(-1, -2));
+            }
+            if (showOrigReading) {
+                TextView origReadTv = sheet.label(
+                        LrclibStrings.text(activity, "edit_original_reading", originalReading),
+                        12, sheet.secondary, sheet.regular);
+                origReadTv.setPadding(0, showOrigLyric ? sheet.dp(2) : sheet.dp(10), 0, sheet.dp(4));
+                fields.addView(origReadTv, new LinearLayout.LayoutParams(-1, -2));
+            }
             Button reset = sheet.action(LrclibStrings.text(activity, "reset_lyric_line"), sheet.accent, false);
             reset.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
             reset.setPadding(0, 0, 0, 0);

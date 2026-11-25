@@ -358,7 +358,7 @@ public final class LrclibController {
         if (query == null || LrclibReflection.getSongInfoAdamId(songInfoPtr) != effectiveAdamId(query)) {
             return songInfoPtr;
         }
-        return OfficialLyricsPronunciation.prepare(ctx, query.trackKey, songInfoPtr,
+        return OfficialLyricsPronunciation.prepare(ctx, query, songInfoPtr,
                 LrclibReflection.getCurrentSystemLyricsLanguage(viewModel));
     }
 
@@ -453,7 +453,7 @@ public final class LrclibController {
             String ttml = LrclibParser.buildCustomLyricsTtml(lyrics, query.durationSec, sysLang, null);
             String lyricsId = "custom:" + adamId;
             LyricsLineEditor.Sheet sheet = LyricsLineEditor.prepare(
-                    ctx, query.trackKey, "custom", lyrics, ttml, null, false, false);
+                    ctx, query.trackKey, query.title, query.artist, "custom", lyrics, ttml, null, false, false);
             Object songInfoPtr = LrclibReflection.parseTtmlToSongInfoPtr(
                     sheet.displayed, adamId, query.queueId, lyricsId, sysLang);
             if (songInfoPtr == null && sheet.displayed != ttml) {
@@ -961,7 +961,7 @@ public final class LrclibController {
         if (built.ttml == null) return false;
 
         LyricsLineEditor.Sheet sheet = LyricsLineEditor.prepare(
-                ctx, query.trackKey, documentKey, edits,
+                ctx, query.trackKey, query.title, query.artist, documentKey, edits,
                 built.baseTtml, generateInParser ? built.ttml : null,
                 built.sourceType == LrclibModels.LyricsSource.LOCAL_WORD, false);
         Object parsed = LrclibReflection.parseTtmlToSongInfoPtr(
@@ -1132,7 +1132,7 @@ public final class LrclibController {
                     prepared, offsetMs, sysLang, generateInParser ? LrclibRomanizer::create : null);
             if (built.ttml != null) {
                 LyricsLineEditor.Sheet sheet = LyricsLineEditor.prepare(
-                        ctx, query.trackKey, documentKey, edits,
+                        ctx, query.trackKey, query.title, query.artist, documentKey, edits,
                         built.baseTtml, generateInParser ? built.ttml : null,
                         built.sourceType == LrclibModels.LyricsSource.LRCLIB_WORD, false);
                 Object parsed = LrclibReflection.parseTtmlToSongInfoPtr(

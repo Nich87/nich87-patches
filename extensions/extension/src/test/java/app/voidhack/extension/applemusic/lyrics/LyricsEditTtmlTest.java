@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class LyricsEditTtmlTest {
     private static final String TTML_NS = "http://www.w3.org/ns/ttml";
@@ -82,6 +84,44 @@ public class LyricsEditTtmlTest {
             assertEquals(line.getAttribute("end"), span.getAttribute("end"));
             assertEquals(i == 2 ? "hoshi no uta" : "", span.getTextContent());
         }
+    }
+
+    @Test
+    public void listsEditedLinesWithOriginalAndUpdatedValuesInOrder() throws Exception {
+        String base = WORD_HEADER + "<head><metadata><iTunesMetadata xmlns=\"" + APPLE_NS + "\">"
+                + "<transliterations><transliteration xml:lang=\"ja-Latn\">"
+                + "<text for=\"L1\">hoshi no uta</text>"
+                + "<text for=\"L2\">hoshi no uta</text>"
+                + "</transliteration></transliterations></iTunesMetadata></metadata></head>"
+                + "<body><div>" + WORD_LINES + "</div></body></tt>";
+
+        Map<Integer, LyricsEditTtml.Edit> edits = Map.of(
+                1, new LyricsEditTtml.Edit("空と海", null),
+                0, new LyricsEditTtml.Edit(null, "hoshi no uta (edited)")
+        );
+        String displayed = LyricsEditTtml.applyReadings(LyricsEditTtml.applyText(base, edits), edits);
+
+        List<LyricsEditTtml.EditedLine> summary = LyricsEditTtml.editedLines(base, displayed, edits);
+        assertEquals(2, summary.size());
+
+        LyricsEditTtml.EditedLine first = summary.get(0);
+        assertEquals(0, first.index);
+        assertEquals(1000L, first.startMs);
+        assertFalse(first.textChanged);
+        assertTrue(first.readingChanged);
+        assertEquals("星の歌", first.originalText);
+        assertEquals("hoshi no uta", first.originalReading);
+        assertEquals("hoshi no uta (edited)", first.currentReading);
+
+        LyricsEditTtml.EditedLine second = summary.get(1);
+        assertEquals(1, second.index);
+        assertEquals(5000L, second.startMs);
+        assertTrue(second.textChanged);
+        assertFalse(second.readingChanged);
+        assertEquals("星の歌", second.originalText);
+        assertEquals("空と海", second.currentText);
+        assertEquals("hoshi no uta", second.originalReading);
+        assertEquals("hoshi no uta", second.currentReading);
     }
 
 }

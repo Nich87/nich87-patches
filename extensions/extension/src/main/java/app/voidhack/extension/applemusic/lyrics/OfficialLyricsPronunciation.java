@@ -18,9 +18,9 @@ public final class OfficialLyricsPronunciation {
         if (ttml != null && song != null) ORIGINALS.put(song, ttml);
     }
 
-    static Object prepare(Context context, String trackKey, Object original, String script) {
+    static Object prepare(Context context, LrclibModels.TrackQuery query, Object original, String script) {
         String ttml = ORIGINALS.get(original);
-        if (ttml == null) return original;
+        if (ttml == null || query == null) return original;
         try {
             Object song = invokeNoArgs(original, "get");
             if (song == null) return original;
@@ -28,7 +28,8 @@ public final class OfficialLyricsPronunciation {
             String lyricsId = (String) invokeNoArgs(song, "getLyricsId");
             boolean wordTiming = ((Number) invokeNoArgs(song, "getTiming")).longValue() == 2L;
             LyricsLineEditor.Sheet sheet = LyricsLineEditor.prepare(
-                    context, trackKey, "apple:" + lyricsId, ttml, ttml, null, wordTiming, officialReading);
+                    context, query.trackKey, query.title, query.artist,
+                    "apple:" + lyricsId, ttml, ttml, null, wordTiming, officialReading);
             if (!sheet.displayed.equals(ttml)) {
                 long adamId = ((Number) invokeNoArgs(song, "getAdamId")).longValue();
                 long queueId = ((Number) invokeNoArgs(song, "getQueueId")).longValue();

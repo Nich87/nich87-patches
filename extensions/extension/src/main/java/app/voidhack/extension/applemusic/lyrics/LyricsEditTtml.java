@@ -63,7 +63,75 @@ final class LyricsEditTtml {
         }
     }
 
+    static final class EditedLine {
+        final int index;
+        final long startMs;
+        final String originalText;
+        final String currentText;
+        final String originalReading;
+        final String currentReading;
+        final boolean textChanged;
+        final boolean readingChanged;
+
+        EditedLine(
+                int index,
+                long startMs,
+                String originalText,
+                String currentText,
+                String originalReading,
+                String currentReading,
+                boolean textChanged,
+                boolean readingChanged) {
+            this.index = index;
+            this.startMs = startMs;
+            this.originalText = originalText == null ? "" : originalText;
+            this.currentText = currentText == null ? "" : currentText;
+            this.originalReading = originalReading == null ? "" : originalReading;
+            this.currentReading = currentReading == null ? "" : currentReading;
+            this.textChanged = textChanged;
+            this.readingChanged = readingChanged;
+        }
+    }
+
     private LyricsEditTtml() {}
+
+    static List<EditedLine> editedLines(
+            String originalTtml, String displayedTtml, Map<Integer, Edit> edits)
+            throws IOException, SAXException, ParserConfigurationException {
+        if (edits == null || edits.isEmpty()) return Collections.emptyList();
+        Map<Integer, Row> origByIndex = new HashMap<>();
+        if (originalTtml != null && !originalTtml.isEmpty()) {
+            for (Row row : rows(originalTtml)) origByIndex.put(row.index, row);
+        }
+        Map<Integer, Row> dispByIndex = new HashMap<>();
+        if (displayedTtml != null && !displayedTtml.isEmpty()) {
+            for (Row row : rows(displayedTtml)) dispByIndex.put(row.index, row);
+        }
+        List<Integer> indices = new ArrayList<>(edits.keySet());
+        Collections.sort(indices);
+        List<EditedLine> result = new ArrayList<>(indices.size());
+        for (int index : indices) {
+            Edit edit = edits.get(index);
+            if (edit == null || (edit.text == null && edit.reading == null)) continue;
+            Row orig = origByIndex.get(index);
+            Row disp = dispByIndex.get(index);
+            String origText = orig != null ? orig.text : "";
+            String currText = disp != null ? disp.text : (edit.text != null ? edit.text : origText);
+            String origReading = orig != null ? orig.reading : "";
+            String currReading = disp != null ? disp.reading : (edit.reading != null ? edit.reading : origReading);
+            long startMs = orig != null ? orig.startMs : (disp != null ? disp.startMs : -1L);
+            boolean textChanged = !currText.equals(origText) || (edit.text != null && !edit.text.equals(origText));
+            boolean readingChanged = !currReading.equals(origReading)
+                    || (edit.reading != null && !edit.reading.equals(origReading));
+            if (!textChanged && !readingChanged) {
+                textChanged = edit.text != null;
+                readingChanged = edit.reading != null;
+            }
+            result.add(new EditedLine(
+                    index, startMs, origText, currText, origReading, currReading, textChanged, readingChanged));
+        }
+        return result;
+    }
 
     static List<Row> rows(String ttml) throws IOException, SAXException, ParserConfigurationException {
         Layout layout = Layout.parse(ttml);
