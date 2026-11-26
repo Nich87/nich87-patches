@@ -40,6 +40,12 @@ Add this source in Morphe Manager:
 
 Enable pre-releases for development builds from `dev`.
 
+## Preview
+
+Overview of the Apple Music patches (turn sound on for the on-device vocal separation demo):
+
+https://github.com/user-attachments/assets/85db8424-fd96-4523-a3c8-d5f4a4a7e504
+
 ## Patches
 
 <!-- PATCHES_START EXPANDED -->
