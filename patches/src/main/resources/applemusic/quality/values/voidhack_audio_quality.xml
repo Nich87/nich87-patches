@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="voidhack_aq_header">Audio Quality</string>
+    <string name="voidhack_aq_close">Close</string>
+    <string name="voidhack_aq_info">Audio details</string>
+    <string name="voidhack_aq_open_settings">Audio Quality Settings</string>
+    <string name="voidhack_aq_current_output">Current Output</string>
+    <string name="voidhack_aq_output_options">Output Options</string>
+    <string name="voidhack_aq_options_expanded">Expanded</string>
+    <string name="voidhack_aq_options_collapsed">Collapsed</string>
+    <string name="voidhack_aq_summary_bit_perfect">Bit-Perfect</string>
+    <string name="voidhack_aq_summary_bit_perfect_usb">USB Direct sends the source PCM unchanged to the DAC.</string>
+    <string name="voidhack_aq_summary_bit_perfect_android">Android USB exclusive output sends the source PCM unchanged to the DAC.</string>
+    <string name="voidhack_aq_summary_usb_direct">Audio goes directly to the USB DAC, bypassing the Android mixer.</string>
+    <string name="voidhack_aq_summary_usb_exclusive">USB Exclusive</string>
+    <string name="voidhack_aq_summary_usb_exclusive_desc">Android uses its USB exclusive mode to send audio to the DAC.</string>
+    <string name="voidhack_aq_summary_usb_mixer">The Android mixer prioritizes the source sample rate.</string>
+    <string name="voidhack_aq_summary_direct_title">Direct Output</string>
+    <string name="voidhack_aq_summary_direct_desc">Android outputs PCM directly. Device volume or audio processing can still apply.</string>
+    <string name="voidhack_aq_summary_passthrough">The connected device decodes the Dolby signal.</string>
+    <string name="voidhack_aq_summary_bluetooth">The Bluetooth codec encodes audio for the connected device.</string>
+    <string name="voidhack_aq_summary_cast">The connected device handles playback.</string>
+    <string name="voidhack_aq_summary_mixer">The Android mixer handles volume and sample rate conversion.</string>
+
+    <string name="voidhack_aq_tier_hires">Hi-Res Lossless</string>
+    <string name="voidhack_aq_tier_lossless">Lossless</string>
+    <string name="voidhack_aq_tier_atmos">Dolby Atmos</string>
+    <string name="voidhack_aq_tier_dolby_audio">Dolby Audio</string>
+    <string name="voidhack_aq_tier_hq">High Quality</string>
+    <string name="voidhack_aq_tier_he">High Efficiency</string>
+    <string name="voidhack_aq_tier_unknown">Audio</string>
+
+    <string name="voidhack_aq_desc_hires">Studio-grade Apple Lossless (ALAC) preserving every nuance above 48 kHz up to 24-bit / 192 kHz.</string>
+    <string name="voidhack_aq_desc_lossless">Apple Lossless (ALAC) preserving every detail of the original recording up to 24-bit / 48 kHz.</string>
+    <string name="voidhack_aq_desc_atmos">Spatial Audio with Dolby Atmos creates an immersive, multi-dimensional soundstage all around you.</string>
+    <string name="voidhack_aq_desc_dolby_audio">Dolby Audio delivers rich multi-channel surround sound.</string>
+    <string name="voidhack_aq_desc_hq">Standard high-quality AAC 256 kbps stereo audio.</string>
+    <string name="voidhack_aq_desc_he">Data-efficient HE-AAC stereo audio.</string>
+    <string name="voidhack_aq_desc_unknown">Real-time playback signal path and output device details.</string>
+
+    <string name="voidhack_aq_stage_source">Source</string>
+    <string name="voidhack_aq_stage_device">Playback Device</string>
+    <string name="voidhack_aq_stage_output">Output Device</string>
+
+    <string name="voidhack_aq_hires_available">Hi-Res Lossless available</string>
+    <string name="voidhack_aq_bit_format">%1$d-bit / %2$s</string>
+    <string name="voidhack_aq_stereo">Stereo</string>
+    <string name="voidhack_aq_mono">Mono</string>
+    <string name="voidhack_aq_spatial_channels">Spatial</string>
+    <string name="voidhack_aq_surround_channels">%1$dch</string>
+
+
+    <string name="voidhack_aq_connector_resampled">Resampled %1$s → %2$s</string>
+
+    <string name="voidhack_aq_out_type_usb">USB</string>
+    <string name="voidhack_aq_out_type_bluetooth">Bluetooth</string>
+    <string name="voidhack_aq_out_type_ble">Bluetooth LE</string>
+    <string name="voidhack_aq_out_type_wired">3.5mm</string>
+    <string name="voidhack_aq_out_type_hdmi">HDMI</string>
+    <string name="voidhack_aq_out_type_hdmi_arc">HDMI ARC</string>
+    <string name="voidhack_aq_out_type_hdmi_earc">HDMI eARC</string>
+    <string name="voidhack_aq_out_type_optical">Optical</string>
+    <string name="voidhack_aq_out_type_speaker">Speaker</string>
+    <string name="voidhack_aq_out_type_cast">Cast</string>
+    <string name="voidhack_aq_out_type_other">Audio Out</string>
+
+    <string name="voidhack_aq_out_name_usb">USB Audio Device</string>
+    <string name="voidhack_aq_out_name_bluetooth">Bluetooth Audio</string>
+    <string name="voidhack_aq_out_name_wired">Wired Headphones</string>
+    <string name="voidhack_aq_out_name_line">Analog Line Out</string>
+    <string name="voidhack_aq_out_name_hdmi">HDMI Audio</string>
+    <string name="voidhack_aq_out_name_optical">Optical Digital</string>
+    <string name="voidhack_aq_out_name_speaker">Built-in Speaker</string>
+    <string name="voidhack_aq_out_name_earpiece">Earpiece</string>
+    <string name="voidhack_aq_out_name_cast">Cast Device</string>
+    <string name="voidhack_aq_out_name_other">Audio Output</string>
+
+    <string name="voidhack_aq_device_detail_usb_direct">UAC %1$d.0 · %2$s (OS &amp; HAL bypassed)</string>
+    <string name="voidhack_aq_device_detail_usb_direct_fb">UAC %1$d.0 · %2$s · Async clock %3$d Hz</string>
+    <string name="voidhack_aq_device_detail_track">AudioTrack %1$s</string>
+    <string name="voidhack_aq_device_detail_mixer">AudioTrack %1$s → %2$s mixer</string>
+    <string name="voidhack_aq_device_detail_soundcheck">Sound Check on</string>
+    <string name="voidhack_aq_device_detail_eq">EQ active</string>
+
+    <string name="voidhack_aq_cap_max">Up to %1$s supported</string>
+    <string name="voidhack_aq_cap_max_bits">Up to %1$d-bit / %2$s supported</string>
+    <string name="voidhack_aq_cap_atmos_hw">Dolby Atmos hardware supported</string>
+    <string name="voidhack_aq_cap_bt_a2dp">Bluetooth A2DP</string>
+    <string name="voidhack_aq_cap_bt_le">LE Audio (LC3)</string>
+
+    <string name="voidhack_aq_paths_header">Output Paths</string>
+    <string name="voidhack_aq_path_usb_direct">USB Direct</string>
+    <string name="voidhack_aq_path_usb_bit_perfect">USB Bit-Perfect (Android)</string>
+    <string name="voidhack_aq_path_usb_preferred">USB Mixer (Source Rate)</string>
+    <string name="voidhack_aq_path_direct_pcm">Direct PCM</string>
+    <string name="voidhack_aq_path_dolby_passthrough">Dolby Bitstream Passthrough</string>
+    <string name="voidhack_aq_path_android_mixer">Android System Mixer</string>
+    <string name="voidhack_aq_path_bluetooth_a2dp">Bluetooth A2DP</string>
+    <string name="voidhack_aq_path_bluetooth_le">Bluetooth LE Audio</string>
+    <string name="voidhack_aq_path_cast">Wireless Cast</string>
+
+    <string name="voidhack_aq_path_state_active">Active</string>
+    <string name="voidhack_aq_path_state_available">Available</string>
+    <string name="voidhack_aq_path_state_permission">Permission</string>
+    <string name="voidhack_aq_path_state_standby">Standby</string>
+    <string name="voidhack_aq_path_state_unavailable">Unavailable</string>
+    <string name="voidhack_aq_path_state_no_usb">No USB</string>
+
+    <string name="voidhack_aq_path_sub_usb_direct_active">UAC %1$d.0 · %2$d-bit / %3$s (bypasses OS &amp; HAL)</string>
+    <string name="voidhack_aq_path_sub_usb_direct_ready">Userspace UAC1/UAC2 driver (works without HAL support)</string>
+    <string name="voidhack_aq_path_sub_usb_direct_perm">Grant USB access to bypass Android\'s audio stack</string>
+    <string name="voidhack_aq_path_sub_usb_direct_no_usb">Connect a USB DAC to use (no HAL support required)</string>
+    <string name="voidhack_aq_path_sub_usb_direct_rate_fallback">DAC does not support %1$s — using standard path</string>
+    <string name="voidhack_aq_path_sub_usb_direct_ch_fallback">Multichannel audio — using standard path</string>
+    <string name="voidhack_aq_path_sub_usb_direct_open_failed">Could not claim USB DAC — using standard path</string>
+    <string name="voidhack_aq_path_sub_need_android14">Requires Android 14 or newer</string>
+    <string name="voidhack_aq_path_sub_usb_required">Connect a USB DAC to use</string>
+    <string name="voidhack_aq_path_sub_bp_active">%1$s · %2$s (bypasses OS mixer &amp; volume)</string>
+    <string name="voidhack_aq_path_sub_bp_ready">Supported by Android 14+ USB HAL</string>
+    <string name="voidhack_aq_path_sub_bp_hal_unsupported">Not exposed by this device\'s USB Audio HAL</string>
+    <string name="voidhack_aq_path_sub_pref_ready">High-res USB mixer attributes available</string>
+    <string name="voidhack_aq_path_sub_direct_active">AudioTrack %1$s · %2$s (HAL direct supported)</string>
+    <string name="voidhack_aq_path_sub_direct_available">Supported by device audio HAL</string>
+    <string name="voidhack_aq_path_sub_direct_unavailable">Format routes through system mixer</string>
+    <string name="voidhack_aq_path_sub_passthrough_active">%1$s bitstream passthrough</string>
+    <string name="voidhack_aq_path_sub_mixer_rate">Shared AudioFlinger mixer (%1$s)</string>
+    <string name="voidhack_aq_path_sub_mixer_generic">Shared AudioFlinger mixer</string>
+    <string name="voidhack_aq_path_sub_bt_wait_reconnect">Reconnect headset to read active codec</string>
+
+    <string name="voidhack_aq_usb_direct_toggle_title">USB Direct</string>
+    <string name="voidhack_aq_usb_direct_toggle_desc">Sends audio to the DAC without going through the Android mixer.</string>
+    <string name="voidhack_aq_usb_direct_toggle_perm_desc">Turning this on asks for access to the DAC.</string>
+    <string name="voidhack_aq_hw_vol_title">DAC Hardware Volume</string>
+    <string name="voidhack_aq_hw_vol_muted">Muted</string>
+    <string name="voidhack_aq_hw_vol_unsupported">DAC does not expose USB hardware volume — adjust volume on the DAC.</string>
+    <string name="voidhack_aq_usb_bp_toggle_title">USB Bit-Perfect (Android)</string>
+    <string name="voidhack_aq_usb_bp_toggle_desc">Uses Android USB exclusive output. Adjust volume on the DAC.</string>
+    <string name="voidhack_aq_usb_bp_soundcheck_hint">Disable Sound Check for unmodified gain.</string>
+    <string name="voidhack_aq_usb_pref_toggle_title">USB Native-Rate Mixer</string>
+    <string name="voidhack_aq_usb_pref_toggle_desc">Requests the track\'s native sample rate and integer PCM on the USB mixer.</string>
+
+    <string name="voidhack_aq_bt_perm_title">Detect Bluetooth codec</string>
+    <string name="voidhack_aq_bt_perm_desc">Allow Nearby devices permission to display codecs such as LDAC or AAC when your headset connects or changes codec.</string>
+    <string name="voidhack_aq_bt_perm_allow">Allow</string>
+
+    <string name="voidhack_aq_info_title">About this signal path</string>
+    <string name="voidhack_aq_info_usb_direct">Userspace USB Direct Driver (UAC %1$d.0) is active. Unmodified integer PCM from Apple Music\'s decoder is streamed directly to your USB DAC over Linux usbdevfs isochronous transfers, bypassing AudioTrack, AudioFlinger, Sound Check scaling, and the vendor USB HAL. Volume changes adjust the DAC\'s hardware Feature Unit without modifying PCM samples.</string>
+    <string name="voidhack_aq_info_bit_perfect">Android 14+ USB Exclusive Bit-Perfect (MIXER_BEHAVIOR_BIT_PERFECT) is active. Integer PCM is delivered directly to your USB DAC, bypassing AudioFlinger mixing, resampling, and OS software volume scaling.</string>
+    <string name="voidhack_aq_info_resampled">Android\'s standard audio mixer resamples streams to %1$s. To play Hi-Res Lossless above 48 kHz natively, connect an external USB DAC supported by high-resolution or bit-perfect output.</string>
+    <string name="voidhack_aq_info_bluetooth">Over Bluetooth A2DP, decoded PCM audio is encoded by the active Bluetooth codec (such as LDAC, aptX, AAC, or SBC) for wireless transmission. Even hi-res codecs like LDAC (up to 990 kbps) apply lossy compression compared to full ALAC PCM.</string>
+    <string name="voidhack_aq_info_bluetooth_pending">Over Bluetooth A2DP, decoded PCM audio is encoded by the active Bluetooth codec (such as LDAC, aptX, AAC, or SBC). Because Android restricts direct getCodecStatus() queries to system apps, the codec name updates automatically the next time your headset connects or changes sample rate/codec while Apple Music is running.</string>
+    <string name="voidhack_aq_info_lossless">Your current signal path preserves the source sample rate and lossless resolution all the way to the connected output device.</string>
+    <string name="voidhack_aq_info_atmos">Dolby Atmos encodes three-dimensional spatial metadata over E-AC-3 JOC. Playback renders spatial cues via your device\'s Dolby decoder or passes the bitstream over HDMI.</string>
+    <string name="voidhack_aq_info_general">Displays the active audio format from Apple Music\'s playback engine, Android\'s AudioTrack / mixer pipeline, and the currently routed output hardware in real time.</string>
+</resources>

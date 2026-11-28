@@ -1,7 +1,75 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.9.1",
+  "version": "1.10.0-dev.3",
   "patches": [
+    {
+      "name": "Audio quality signal path",
+      "description": "Shows the live audio signal path (current output, source format, resampling, playback device, connected hardware, and Bluetooth codec) when you tap a Now Playing quality badge.",
+      "default": true,
+      "category": null,
+      "compatiblePackages": [
+        {
+          "packageName": "com.apple.android.music",
+          "name": "Apple Music",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#FA243C",
+          "signatures": null,
+          "formFactor": "MOBILE",
+          "targets": [
+            {
+              "version": "7.0.0",
+              "versionCodes": {
+                "ARM64_V8A": 1614,
+                "ARMEABI_V7A": 1614,
+                "X86_64": 1614,
+                "X86": 1614
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            },
+            {
+              "version": "7.0.1",
+              "versionCodes": {
+                "ARM64_V8A": 1622,
+                "ARMEABI_V7A": 1622,
+                "X86_64": 1622,
+                "X86": 1622
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            },
+            {
+              "version": "7.0.2",
+              "versionCodes": {
+                "ARM64_V8A": 1624,
+                "ARMEABI_V7A": 1624,
+                "X86_64": 1624,
+                "X86": 1624
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            },
+            {
+              "version": "7.0.3",
+              "versionCodes": {
+                "ARM64_V8A": 1626,
+                "ARMEABI_V7A": 1626,
+                "X86_64": 1626,
+                "X86": 1626
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
     {
       "name": "Custom font",
       "description": "Replaces Apple Music's font across views, Compose screens, and lyrics using imported .ttf/.otf/.ttc files or system fonts, with optional SF Pro Latin preservation and per-scope settings.",
@@ -535,6 +603,74 @@
       "options": []
     },
     {
+      "name": "Samsung Modes and Routines support",
+      "description": "Adds Apple Music to Samsung Modes and Routines' Play music action so a routine can resume the current playback queue.",
+      "default": false,
+      "category": null,
+      "compatiblePackages": [
+        {
+          "packageName": "com.apple.android.music",
+          "name": "Apple Music",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#FA243C",
+          "signatures": null,
+          "formFactor": "MOBILE",
+          "targets": [
+            {
+              "version": "7.0.0",
+              "versionCodes": {
+                "ARM64_V8A": 1614,
+                "ARMEABI_V7A": 1614,
+                "X86_64": 1614,
+                "X86": 1614
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            },
+            {
+              "version": "7.0.1",
+              "versionCodes": {
+                "ARM64_V8A": 1622,
+                "ARMEABI_V7A": 1622,
+                "X86_64": 1622,
+                "X86": 1622
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            },
+            {
+              "version": "7.0.2",
+              "versionCodes": {
+                "ARM64_V8A": 1624,
+                "ARMEABI_V7A": 1624,
+                "X86_64": 1624,
+                "X86": 1624
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            },
+            {
+              "version": "7.0.3",
+              "versionCodes": {
+                "ARM64_V8A": 1626,
+                "ARMEABI_V7A": 1626,
+                "X86_64": 1626,
+                "X86": 1626
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
       "name": "Spaces local mute",
       "description": "Locally mute specific speakers on the listener side in Twitter/X Spaces and replays (via Space profile popups or header mute sheet) without affecting other listeners. Compatible standalone or alongside Piko.",
       "default": true,
@@ -556,6 +692,74 @@
                 "ARMEABI_V7A": 312191000,
                 "X86_64": 312191000,
                 "X86": 312191000
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "USB DAC bit-perfect output",
+      "description": "Adds bit-perfect USB DAC output to bypass Android resampling and mixing via Android 14+ USB exclusive/native-rate mixer modes or an experimental userspace USB Direct driver with DAC hardware volume. Configured from the Now Playing audio quality sheet.",
+      "default": false,
+      "category": null,
+      "compatiblePackages": [
+        {
+          "packageName": "com.apple.android.music",
+          "name": "Apple Music",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#FA243C",
+          "signatures": null,
+          "formFactor": "MOBILE",
+          "targets": [
+            {
+              "version": "7.0.0",
+              "versionCodes": {
+                "ARM64_V8A": 1614,
+                "ARMEABI_V7A": 1614,
+                "X86_64": 1614,
+                "X86": 1614
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            },
+            {
+              "version": "7.0.1",
+              "versionCodes": {
+                "ARM64_V8A": 1622,
+                "ARMEABI_V7A": 1622,
+                "X86_64": 1622,
+                "X86": 1622
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            },
+            {
+              "version": "7.0.2",
+              "versionCodes": {
+                "ARM64_V8A": 1624,
+                "ARMEABI_V7A": 1624,
+                "X86_64": 1624,
+                "X86": 1624
+              },
+              "isExperimental": false,
+              "minSdk": null,
+              "description": null
+            },
+            {
+              "version": "7.0.3",
+              "versionCodes": {
+                "ARM64_V8A": 1626,
+                "ARMEABI_V7A": 1626,
+                "X86_64": 1626,
+                "X86": 1626
               },
               "isExperimental": false,
               "minSdk": null,

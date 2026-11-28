@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-26T23:19:10",
-  "description": "## [1.9.1](https://github.com/Nich87/nich87-patches/compare/v1.9.0...v1.9.1) (2026-11-26)\n\n### 🐛 Bug Fixes\n\n* Keep lyrics source indicator hidden when controls are hidden ([302eb47](https://github.com/Nich87/nich87-patches/commit/302eb4721d2491368425c60b9432fe0d5ad525a0))\n* Paginate Apple Music cloud DAAP items with mpag tokens ([4b447bd](https://github.com/Nich87/nich87-patches/commit/4b447bdff7bd5cc19a599e6c48c8b5d8fb028a9b))",
-  "download_url": "https://github.com/Nich87/nich87-patches/releases/download/v1.9.1/patches-1.9.1.mpp",
+  "created_at": "2026-11-28T15:28:02",
+  "description": "## [1.10.0-dev.3](https://github.com/Nich87/nich87-patches/compare/v1.10.0-dev.2...v1.10.0-dev.3) (2026-11-28)\n\n### ✨ New Features\n\n* Split Apple Music USB DAC bit-perfect output from audio quality signal path ([4e2f8c4](https://github.com/Nich87/nich87-patches/commit/4e2f8c4fa00111830d9f7e4d2d5e9348c2abc7db))",
+  "download_url": "https://github.com/Nich87/nich87-patches/releases/download/v1.10.0-dev.3/patches-1.10.0-dev.3.mpp",
   "signature_download_url": "",
-  "version": "1.9.1"
+  "version": "1.10.0-dev.3"
 }

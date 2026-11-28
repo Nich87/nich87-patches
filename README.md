@@ -49,9 +49,9 @@ https://github.com/user-attachments/assets/85db8424-fd96-4523-a3c8-d5f4a4a7e504
 ## Patches
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.9.1](https://github.com/Nich87/nich87-patches/releases/tag/v1.9.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;9 patches total
+> **[v1.10.0-dev.3](https://github.com/Nich87/nich87-patches/releases/tag/v1.10.0-dev.3)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;12 patches total
 <details open>
-<summary>📦 Apple Music&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
+<summary>📦 Apple Music&nbsp;&nbsp;•&nbsp;&nbsp;11 patches</summary>
 <br>
 
 **Package name:** `com.apple.android.music`
@@ -63,6 +63,7 @@ https://github.com/user-attachments/assets/85db8424-fd96-4523-a3c8-d5f4a4a7e504
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
+| [Audio quality signal path](#audio-quality-signal-path) | Shows the live audio signal path (current output, source format, resampling, playback device, connected hardware, and Bluetooth codec) when you tap a Now Playing quality badge. |  |
 | [Custom font](#custom-font) | Replaces Apple Music's font across views, Compose screens, and lyrics using imported .ttf/.otf/.ttc files or system fonts, with optional SF Pro Latin preservation and per-scope settings. |  |
 | [LRCLIB lyrics](#lrclib-lyrics) | Loads synced and unsynced local LRC files (per-song or auto-matched folder), pasted plain-text/LRC lyrics, and LRCLIB lyrics with per-song overrides, timing offsets, LRC export, and a source indicator. |  |
 | [Library import, export and downloads](#library-import-export-and-downloads) | Adds JSON library and playlist backups, additive import, and a native download action for the entire library. |  |
@@ -71,6 +72,8 @@ https://github.com/user-attachments/assets/85db8424-fd96-4523-a3c8-d5f4a4a7e504
 | [On-device pronunciation guides](#on-device-pronunciation-guides) | Generates on-device pronunciation guides for Apple Music, custom, and external lyrics (offline Japanese Kuromoji dictionary and Android ICU) with word-synced karaoke and unsynced lyrics support. |  |
 | [On-device vocal separation](#on-device-vocal-separation) | Adds a vocal and accompaniment mix slider to the lyrics screen. Supports stereo and Dolby Atmos PCM after a one-time model download. |  |
 | [Repair Japanese library metadata](#repair-japanese-library-metadata) | Finds romanized library metadata and repairs selected songs using Japanese catalog data, preserving library entries and syncing changes to the account. |  |
+| [Samsung Modes and Routines support](#samsung-modes-and-routines-support) | Adds Apple Music to Samsung Modes and Routines' Play music action so a routine can resume the current playback queue. |  |
+| [USB DAC bit-perfect output](#usb-dac-bit-perfect-output) | Adds bit-perfect USB DAC output to bypass Android resampling and mixing via Android 14+ USB exclusive/native-rate mixer modes or an experimental userspace USB Direct driver with DAC hardware volume. Configured from the Now Playing audio quality sheet. |  |
 
 </details>
 

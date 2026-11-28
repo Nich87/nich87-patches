@@ -23,8 +23,8 @@ import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodImplementation
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 
-private const val EXTENSION = "Lapp/voidhack/extension/applemusic/LiquidGlass;"
-private const val SHEET_BRIDGE = "Lapp/voidhack/extension/applemusic/GlassPlayerSheet;"
+private const val EXTENSION = "Lapp/voidhack/extension/applemusic/glass/LiquidGlass;"
+private const val SHEET_BRIDGE = "Lapp/voidhack/extension/applemusic/glass/GlassPlayerSheet;"
 private const val VIEW = "Landroid/view/View;"
 private const val TOUCH_EVENT = "Landroid/view/MotionEvent;"
 private const val COORDINATOR = "Landroidx/coordinatorlayout/widget/CoordinatorLayout;"
