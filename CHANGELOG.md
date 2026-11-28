@@ -1,3 +1,9 @@
+## [1.10.0-dev.1](https://github.com/Nich87/nich87-patches/compare/v1.9.1...v1.10.0-dev.1) (2026-11-28)
+
+### ✨ New Features
+
+* Add Apple Music audio quality signal path ([0d0fe48](https://github.com/Nich87/nich87-patches/commit/0d0fe48e1aa93bfe409490a2ca8967abc46afe64))
+
 ## [1.9.1](https://github.com/Nich87/nich87-patches/compare/v1.9.0...v1.9.1) (2026-11-26)
 
 ### 🐛 Bug Fixes

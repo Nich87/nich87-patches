@@ -49,9 +49,9 @@ https://github.com/user-attachments/assets/85db8424-fd96-4523-a3c8-d5f4a4a7e504
 ## Patches
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.9.1](https://github.com/Nich87/nich87-patches/releases/tag/v1.9.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;9 patches total
+> **[v1.10.0-dev.1](https://github.com/Nich87/nich87-patches/releases/tag/v1.10.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;10 patches total
 <details open>
-<summary>📦 Apple Music&nbsp;&nbsp;•&nbsp;&nbsp;8 patches</summary>
+<summary>📦 Apple Music&nbsp;&nbsp;•&nbsp;&nbsp;9 patches</summary>
 <br>
 
 **Package name:** `com.apple.android.music`
@@ -63,6 +63,7 @@ https://github.com/user-attachments/assets/85db8424-fd96-4523-a3c8-d5f4a4a7e504
 
 | 💊&nbsp;Patch | 📜&nbsp;Description | ⚙️&nbsp;Options |
 |----------|----------------|-----------|
+| [Audio quality signal path](#audio-quality-signal-path) | Shows the current output, source audio, playback device, and connected hardware when you tap a Now Playing quality badge. Output Options includes supported USB mixer modes and experimental USB Direct playback with hardware volume on compatible DACs. |  |
 | [Custom font](#custom-font) | Replaces Apple Music's font across views, Compose screens, and lyrics using imported .ttf/.otf/.ttc files or system fonts, with optional SF Pro Latin preservation and per-scope settings. |  |
 | [LRCLIB lyrics](#lrclib-lyrics) | Loads synced and unsynced local LRC files (per-song or auto-matched folder), pasted plain-text/LRC lyrics, and LRCLIB lyrics with per-song overrides, timing offsets, LRC export, and a source indicator. |  |
 | [Library import, export and downloads](#library-import-export-and-downloads) | Adds JSON library and playlist backups, additive import, and a native download action for the entire library. |  |
