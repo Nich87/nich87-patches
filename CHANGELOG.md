@@ -1,3 +1,9 @@
+## [1.10.0-dev.3](https://github.com/Nich87/nich87-patches/compare/v1.10.0-dev.2...v1.10.0-dev.3) (2026-11-28)
+
+### ✨ New Features
+
+* Split Apple Music USB DAC bit-perfect output from audio quality signal path ([4e2f8c4](https://github.com/Nich87/nich87-patches/commit/4e2f8c4fa00111830d9f7e4d2d5e9348c2abc7db))
+
 ## [1.10.0-dev.2](https://github.com/Nich87/nich87-patches/compare/v1.10.0-dev.1...v1.10.0-dev.2) (2026-11-28)
 
 ### ✨ New Features
