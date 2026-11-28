@@ -79,38 +79,44 @@ patches. Each patch can be selected independently.
 Android 13+ provides live refraction. Older versions retain the native blur;
 that fallback has not been verified on a device.
 
-### Audio quality signal path
+### Audio quality signal path & USB DAC bit-perfect output
 
-`Audio quality signal path` replaces Apple Music's plain audio-quality alert on
-the Now Playing screen (when tapping the Lossless or Hi-Res Lossless badge, and
-makes the Dolby Atmos badge tappable as well) with a dark bottom sheet.
-**Current Output** identifies the active route, including the distinction
-between direct PCM and bit-perfect output. **Output Options** lists the
-available routes and USB controls. The signal path shows:
+Audio quality inspection and USB DAC playback are split into two independently
+selectable patches sharing an internal sheet/observation base (`AudioQualityBasePatch`):
 
-- **Source**: track quality tier (Hi-Res Lossless, Lossless, Dolby Atmos, Dolby
-  Audio, High Quality / High Efficiency AAC), codec (`ALAC`, `E-AC-3 JOC`,
-  `AAC`, etc.), bit depth, sample rate, channel layout, bitrate, and catalog
-  Hi-Res availability.
-- **Playback device**: device name, live `AudioTrack` / `DefaultAudioSink`
-  output format, Android AudioFlinger native HAL sample rate, Android 13+ direct
-  playback / Android 14+ `AudioMixerAttributes` (Bit-Perfect / Direct / Mixer /
-  Bitstream Passthrough), and Sound Check / EQ status.
-- **Connected output device & output paths**: dynamically identified routed
-  hardware (USB DAC / USB Audio, Bluetooth A2DP / LE Audio, 3.5mm wired
-  headphones / line out, HDMI / ARC / eARC, Optical S/PDIF, built-in speaker,
-  or remote Cast) with device product name, effective output format, supported
-  capabilities, live hot-plug updates, optional Bluetooth A2DP codec detection
-  (`ACTION_CODEC_CONFIG_CHANGED` with `BLUETOOTH_CONNECT`).
-
-**USB Bit-Perfect (Android)** uses `MIXER_BEHAVIOR_BIT_PERFECT` when the Android
-USB HAL supports it. **USB Direct** is opt-in and experimental. Its userspace
-UAC 1.0 / UAC 2.0 driver (`libvoidhack_usb_audio.so`, adapted from the
-MIT-licensed `decent-usb-audio-driver` in `Ma145/decent-player`) sends music
-PCM directly to the DAC. When the DAC exposes UAC hardware volume, its gain
-follows Android's media volume and can be adjusted in the sheet.
-USB Direct playback and reconnection were verified on Apple Music 7.0.3 with
-a UAC 1.0 DAC. UAC 2.0 clock validation is covered by host tests.
+- **`Audio quality signal path`** (`default = true`) replaces Apple Music's
+  plain audio-quality alert on the Now Playing screen (when tapping the Lossless
+  or Hi-Res Lossless badge, and makes the Dolby Atmos badge tappable as well)
+  with a read-only dark bottom sheet. It does not intercept `DefaultAudioSink`
+  playback or bundle `libvoidhack_usb_audio.so`. **Current Output** identifies
+  the active route, **Output Paths** lists OS/HAL routes, and the 3-stage
+  signal path shows:
+  - **Source**: track quality tier (Hi-Res Lossless, Lossless, Dolby Atmos, Dolby
+    Audio, High Quality / High Efficiency AAC), codec (`ALAC`, `E-AC-3 JOC`,
+    `AAC`, etc.), bit depth, sample rate, channel layout, bitrate, and catalog
+    Hi-Res availability.
+  - **Playback device**: device name, live `AudioTrack` / `DefaultAudioSink`
+    output format, Android AudioFlinger native HAL sample rate, Android 13+ direct
+    playback / Android 14+ `AudioMixerAttributes` (Bit-Perfect / Direct / Mixer /
+    Bitstream Passthrough), and Sound Check / EQ status.
+  - **Connected output device**: dynamically identified routed hardware (USB
+    DAC / USB Audio, Bluetooth A2DP / LE Audio, 3.5mm wired headphones / line
+    out, HDMI / ARC / eARC, Optical S/PDIF, built-in speaker, or remote Cast)
+    with device product name, effective output format, supported capabilities,
+    live hot-plug updates, and optional Bluetooth A2DP codec detection
+    (`ACTION_CODEC_CONFIG_CHANGED` with `BLUETOOTH_CONNECT`).
+- **`USB DAC bit-perfect output`** (`default = false`) enables USB DAC output
+  controls inside the Now Playing audio quality sheet (`Output Options`) and
+  adds the `DefaultAudioSink` / `NoisyAudioReceiver` hooks and native library:
+  - **USB Bit-Perfect (Android)** uses `MIXER_BEHAVIOR_BIT_PERFECT` (or native-rate
+    USB mixer attributes) when the Android 14+ USB HAL supports it.
+  - **USB Direct** is opt-in and experimental. Its userspace UAC 1.0 / UAC 2.0
+    driver (`libvoidhack_usb_audio.so`, adapted from the MIT-licensed
+    `decent-usb-audio-driver` in `Ma145/decent-player`) sends music PCM directly
+    to the DAC. When the DAC exposes UAC hardware volume, its gain follows
+    Android's media volume and can be adjusted in the sheet.
+  - USB Direct playback and reconnection were verified on Apple Music 7.0.3 with
+    a UAC 1.0 DAC. UAC 2.0 clock validation is covered by host tests.
 
 ### LRCLIB lyrics
 

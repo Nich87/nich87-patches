@@ -342,7 +342,8 @@ final class AudioQualitySheet {
         optionsRow.setFocusable(true);
         optionsRow.setOnClickListener(v -> toggleOutputOptions());
         outputOptionsButton = optionsRow;
-        String optionsTitle = AudioQualityStrings.text(activity, "output_options");
+        boolean usbDacEnabled = AudioQualityFeatures.usbDacOutput();
+        String optionsTitle = AudioQualityStrings.text(activity, usbDacEnabled ? "output_options" : "paths_header");
         optionsRow.setContentDescription(optionsTitle);
         TextView optionsLabel = label(optionsTitle, 15, fontSemibold, TEXT_PRIMARY);
         optionsLabel.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
@@ -486,7 +487,11 @@ final class AudioQualitySheet {
 
         TextView pathsHeader = label(AudioQualityStrings.text(activity, "paths_header"), 12, fontMedium, TEXT_SECONDARY);
         pathsHeader.setPadding(0, dp(14), 0, dp(8));
+        pathsHeader.setVisibility(usbDacEnabled ? View.VISIBLE : View.GONE);
         outputOptions.addView(pathsHeader);
+        if (!usbDacEnabled) {
+            pathsListContainer.setPadding(0, dp(2), 0, 0);
+        }
         outputOptions.addView(pathsListContainer, new LinearLayout.LayoutParams(-1, -2));
 
         LinearLayout.LayoutParams pathsCardParams = new LinearLayout.LayoutParams(-1, -2);
@@ -688,6 +693,7 @@ final class AudioQualitySheet {
     }
 
     private void toggleUsbDirectDriver() {
+        if (!AudioQualityFeatures.usbDacOutput()) return;
         boolean currentlyEnabled = UsbDirectAudioEngine.isEnabled(activity);
         if (currentlyEnabled) {
             UsbDirectAudioEngine.setEnabled(activity, false);
@@ -719,6 +725,7 @@ final class AudioQualitySheet {
     }
 
     private void toggleExclusiveUsbBitPerfect() {
+        if (!AudioQualityFeatures.usbDacOutput()) return;
         boolean next = !AudioQualityBitPerfect.isExclusiveUsbEnabled(activity);
         if (next && UsbDirectAudioEngine.isEnabled(activity)) {
             UsbDirectAudioEngine.setEnabled(activity, false);
@@ -806,9 +813,11 @@ final class AudioQualitySheet {
         // Populate available vs active output paths
         if (outputOptionsExpanded) renderOutputPaths(data);
 
-        // 1. Userspace USB Direct Driver toggle (shown whenever a USB Audio Class DAC is connected
-        //    and libvoidhack_usb_audio.so is loaded — works even when OS USB HAL is unexposed!)
-        boolean showUsbDirectToggle = data.usbDirect.nativeLoaded
+        // 1. Userspace USB Direct Driver toggle (only shown when USB DAC bit-perfect output patch is enabled
+        //    and a USB Audio Class DAC is connected with libvoidhack_usb_audio.so loaded)
+        boolean usbDacEnabled = AudioQualityFeatures.usbDacOutput();
+        boolean showUsbDirectToggle = usbDacEnabled
+                && data.usbDirect.nativeLoaded
                 && (data.usbDirect.deviceAttached || data.usbDirect.settingEnabled);
         usbDirectToggleRow.setVisibility(showUsbDirectToggle ? View.VISIBLE : View.GONE);
         if (showUsbDirectToggle) {
@@ -822,7 +831,7 @@ final class AudioQualitySheet {
         }
 
         // 1b. Bit-perfect UAC Hardware Volume slider when USB Direct Driver is streaming
-        boolean showHwVol = data.pipelineMode == AudioQualityModels.PipelineMode.USB_DIRECT_DRIVER;
+        boolean showHwVol = usbDacEnabled && data.pipelineMode == AudioQualityModels.PipelineMode.USB_DIRECT_DRIVER;
         hwVolDivider.setVisibility(showHwVol ? View.VISIBLE : View.GONE);
         hwVolContainer.setVisibility(showHwVol ? View.VISIBLE : View.GONE);
         if (showHwVol) {
@@ -846,7 +855,8 @@ final class AudioQualitySheet {
         }
 
         // 2. Optional Android 14+ OS HAL Bit-Perfect / Preferred Mixer toggle when HAL advertises it
-        boolean showUsbToggle = Build.VERSION.SDK_INT >= 34
+        boolean showUsbToggle = usbDacEnabled
+                && Build.VERSION.SDK_INT >= 34
                 && data.outputKind == AudioQualityModels.OutputKind.USB
                 && (data.usbBitPerfectSupportedByHal || data.usbPreferredMixerSupportedByHal);
         usbToggleDivider.setVisibility(showUsbToggle && showUsbDirectToggle ? View.VISIBLE : View.GONE);

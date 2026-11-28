@@ -334,6 +334,7 @@ public final class AudioQualityModels {
         public final boolean usbPreferredMixerTrackActive;
         public final List<UsbMixerOption> supportedUsbMixers;
         public final UsbDirectState usbDirect;
+        public final boolean usbDacOutputEnabled;
 
         public PipelineInput(
                 String deviceName,
@@ -375,7 +376,8 @@ public final class AudioQualityModels {
                     preferredMixerBitPerfect && preferredMixerSampleRateHz > 0,
                     !preferredMixerBitPerfect && preferredMixerSampleRateHz > 0,
                     Collections.emptyList(),
-                    UsbDirectState.NONE
+                    UsbDirectState.NONE,
+                    true
             );
         }
 
@@ -423,7 +425,8 @@ public final class AudioQualityModels {
                     usbBitPerfectTrackActive,
                     usbPreferredMixerTrackActive,
                     supportedUsbMixers,
-                    UsbDirectState.NONE
+                    UsbDirectState.NONE,
+                    true
             );
         }
 
@@ -450,6 +453,57 @@ public final class AudioQualityModels {
                 boolean usbPreferredMixerTrackActive,
                 List<UsbMixerOption> supportedUsbMixers,
                 UsbDirectState usbDirect) {
+            this(
+                    deviceName,
+                    hasLiveTrack,
+                    isInputPcm,
+                    sinkInputSampleRateHz,
+                    sinkInputEncoding,
+                    trackSampleRateHz,
+                    trackEncoding,
+                    trackChannelCount,
+                    nativeHalSampleRateHz,
+                    systemMixerSampleRateHz,
+                    preferredMixerBitPerfect,
+                    preferredMixerSampleRateHz,
+                    preferredMixerEncoding,
+                    directPlaybackSupported,
+                    soundCheckEnabled,
+                    eqEnabled,
+                    isPlaying,
+                    usbExclusiveSettingEnabled,
+                    usbBitPerfectTrackActive,
+                    usbPreferredMixerTrackActive,
+                    supportedUsbMixers,
+                    usbDirect,
+                    true
+            );
+        }
+
+        public PipelineInput(
+                String deviceName,
+                boolean hasLiveTrack,
+                boolean isInputPcm,
+                int sinkInputSampleRateHz,
+                int sinkInputEncoding,
+                int trackSampleRateHz,
+                int trackEncoding,
+                int trackChannelCount,
+                int nativeHalSampleRateHz,
+                int systemMixerSampleRateHz,
+                boolean preferredMixerBitPerfect,
+                int preferredMixerSampleRateHz,
+                int preferredMixerEncoding,
+                boolean directPlaybackSupported,
+                boolean soundCheckEnabled,
+                boolean eqEnabled,
+                boolean isPlaying,
+                boolean usbExclusiveSettingEnabled,
+                boolean usbBitPerfectTrackActive,
+                boolean usbPreferredMixerTrackActive,
+                List<UsbMixerOption> supportedUsbMixers,
+                UsbDirectState usbDirect,
+                boolean usbDacOutputEnabled) {
             this.deviceName = deviceName;
             this.hasLiveTrack = hasLiveTrack;
             this.isInputPcm = isInputPcm;
@@ -474,6 +528,7 @@ public final class AudioQualityModels {
                     ? Collections.emptyList()
                     : Collections.unmodifiableList(new ArrayList<>(supportedUsbMixers));
             this.usbDirect = usbDirect == null ? UsbDirectState.NONE : usbDirect;
+            this.usbDacOutputEnabled = usbDacOutputEnabled;
         }
     }
 
@@ -1259,6 +1314,7 @@ public final class AudioQualityModels {
                 outputKind,
                 mode,
                 usbDirect,
+                pipeline.usbDacOutputEnabled,
                 bitstreamPassthrough,
                 pipeline.directPlaybackSupported,
                 usbBpSupported,
@@ -1326,6 +1382,7 @@ public final class AudioQualityModels {
             OutputKind outputKind,
             PipelineMode activeMode,
             UsbDirectState usbDirect,
+            boolean usbDacOutputEnabled,
             boolean bitstreamPassthrough,
             boolean directPlaybackSupported,
             boolean usbBpSupported,
@@ -1343,54 +1400,68 @@ public final class AudioQualityModels {
             boolean hwAtmos) {
         List<OutputPathEntry> list = new ArrayList<>();
 
-        // 1. Userspace USB Direct Driver (UAC1/UAC2, works even when OS USB HAL is unexposed)
-        PathAvailability directUsbAvail;
-        if (activeMode == PipelineMode.USB_DIRECT_DRIVER) {
-            directUsbAvail = PathAvailability.ACTIVE;
-        } else if (!usbDirect.nativeLoaded) {
-            directUsbAvail = PathAvailability.UNAVAILABLE;
-        } else if (!usbDirect.deviceAttached) {
-            directUsbAvail = PathAvailability.UNAVAILABLE;
-        } else if (!usbDirect.permissionGranted) {
-            directUsbAvail = PathAvailability.PERMISSION_REQUIRED;
-        } else {
-            directUsbAvail = PathAvailability.AVAILABLE;
+        // 1. Userspace USB Direct Driver (UAC1/UAC2, only exposed when USB DAC bit-perfect output patch is enabled)
+        if (usbDacOutputEnabled) {
+            PathAvailability directUsbAvail;
+            if (activeMode == PipelineMode.USB_DIRECT_DRIVER) {
+                directUsbAvail = PathAvailability.ACTIVE;
+            } else if (!usbDirect.nativeLoaded) {
+                directUsbAvail = PathAvailability.UNAVAILABLE;
+            } else if (!usbDirect.deviceAttached) {
+                directUsbAvail = PathAvailability.UNAVAILABLE;
+            } else if (!usbDirect.permissionGranted) {
+                directUsbAvail = PathAvailability.PERMISSION_REQUIRED;
+            } else {
+                directUsbAvail = PathAvailability.AVAILABLE;
+            }
+            list.add(new OutputPathEntry(
+                    OutputPathId.USB_DIRECT_DRIVER,
+                    directUsbAvail,
+                    usbDirect.maxBitDepth,
+                    usbDirect.maxSampleRateHz,
+                    usbDirect.bitDepth > 0 ? usbDirect.bitDepth : deviceBits,
+                    usbDirect.sampleRateHz > 0 ? usbDirect.sampleRateHz : deviceRate,
+                    trackEncoding));
         }
-        list.add(new OutputPathEntry(
-                OutputPathId.USB_DIRECT_DRIVER,
-                directUsbAvail,
-                usbDirect.maxBitDepth,
-                usbDirect.maxSampleRateHz,
-                usbDirect.bitDepth > 0 ? usbDirect.bitDepth : deviceBits,
-                usbDirect.sampleRateHz > 0 ? usbDirect.sampleRateHz : deviceRate,
-                trackEncoding));
 
         // 2. Android 14+ USB Exclusive Bit-Perfect (OS HAL)
-        if (outputKind == OutputKind.USB) {
-            PathAvailability bpAvail = activeMode == PipelineMode.BIT_PERFECT
-                    ? PathAvailability.ACTIVE
-                    : (usbBpSupported ? PathAvailability.AVAILABLE : PathAvailability.UNAVAILABLE);
+        if (usbDacOutputEnabled) {
+            if (outputKind == OutputKind.USB) {
+                PathAvailability bpAvail = activeMode == PipelineMode.BIT_PERFECT
+                        ? PathAvailability.ACTIVE
+                        : (usbBpSupported ? PathAvailability.AVAILABLE : PathAvailability.UNAVAILABLE);
+                list.add(new OutputPathEntry(
+                        OutputPathId.USB_BIT_PERFECT,
+                        bpAvail,
+                        usbBpMaxBits,
+                        usbBpMaxRate,
+                        deviceBits,
+                        deviceRate,
+                        trackEncoding));
+            } else {
+                list.add(new OutputPathEntry(
+                        OutputPathId.USB_BIT_PERFECT,
+                        PathAvailability.UNAVAILABLE,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0));
+            }
+        } else if (outputKind == OutputKind.USB && activeMode == PipelineMode.BIT_PERFECT) {
             list.add(new OutputPathEntry(
                     OutputPathId.USB_BIT_PERFECT,
-                    bpAvail,
+                    PathAvailability.ACTIVE,
                     usbBpMaxBits,
                     usbBpMaxRate,
                     deviceBits,
                     deviceRate,
                     trackEncoding));
-        } else {
-            list.add(new OutputPathEntry(
-                    OutputPathId.USB_BIT_PERFECT,
-                    PathAvailability.UNAVAILABLE,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0));
         }
 
-        // 3. Android 14+ USB Preferred Mixer (shown when USB device advertises non-bit-perfect mixer attributes)
-        if (outputKind == OutputKind.USB && (usbPrefSupported || activeMode == PipelineMode.USB_PREFERRED_MIXER)) {
+        // 3. Android 14+ USB Preferred Mixer (shown when USB DAC patch is enabled & HAL advertises it, or if active)
+        if (outputKind == OutputKind.USB
+                && ((usbDacOutputEnabled && usbPrefSupported) || activeMode == PipelineMode.USB_PREFERRED_MIXER)) {
             PathAvailability prefAvail = activeMode == PipelineMode.USB_PREFERRED_MIXER
                     ? PathAvailability.ACTIVE
                     : PathAvailability.AVAILABLE;

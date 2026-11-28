@@ -463,6 +463,48 @@ public class AudioQualityModelsTest {
     }
 
     @Test
+    public void signalPathOnlyHidesUnpatchedUsbDacOutputPaths() {
+        AudioQualityModels.SourceInput src = new AudioQualityModels.SourceInput(
+                AudioQualityModels.VARIANT_HI_RES_LOSSLESS, 24, 96000, 2, 3326000, "alac",
+                AudioQualityModels.CAP_HI_RES_LOSSLESS, "Song", "Artist");
+        List<AudioQualityModels.UsbMixerOption> supported = Collections.singletonList(
+                new AudioQualityModels.UsbMixerOption(true, AudioQualityModels.ENCODING_PCM_24BIT_PACKED, 96000, 12));
+        AudioQualityModels.PipelineInput pipe = new AudioQualityModels.PipelineInput(
+                "Pixel 9 Pro", true, true, 96000, AudioQualityModels.EXO_ENCODING_PCM_24BIT,
+                96000, AudioQualityModels.ENCODING_PCM_FLOAT, 2, 48000, 48000,
+                false, 0, 0, false, false, false, true,
+                false, false, false, supported, AudioQualityModels.UsbDirectState.NONE,
+                false);
+        AudioQualityModels.HardwareOutputInput hwUsb = new AudioQualityModels.HardwareOutputInput(
+                AudioQualityModels.DEV_USB_DEVICE, "FiiO KA17",
+                new int[]{44100, 48000, 96000},
+                new int[]{AudioQualityModels.ENCODING_PCM_16BIT, AudioQualityModels.ENCODING_PCM_24BIT_PACKED},
+                "", 0, 0, false, "");
+
+        AudioQualityModels.ResolvedSignalPath res = AudioQualityModels.resolve(src, pipe, hwUsb);
+        for (AudioQualityModels.OutputPathEntry entry : res.outputPaths) {
+            assertFalse("Unexpected USB_DIRECT_DRIVER when USB DAC patch is disabled",
+                    entry.id == AudioQualityModels.OutputPathId.USB_DIRECT_DRIVER);
+            assertFalse("Unexpected inactive USB_BIT_PERFECT when USB DAC patch is disabled",
+                    entry.id == AudioQualityModels.OutputPathId.USB_BIT_PERFECT);
+            assertFalse("Unexpected inactive USB_PREFERRED_MIXER when USB DAC patch is disabled",
+                    entry.id == AudioQualityModels.OutputPathId.USB_PREFERRED_MIXER);
+        }
+
+        // If the platform itself already has OS USB Bit-Perfect active, signal-path-only still reports it truthfully.
+        AudioQualityModels.PipelineInput osActiveBp = new AudioQualityModels.PipelineInput(
+                "Pixel 9 Pro", true, true, 96000, AudioQualityModels.EXO_ENCODING_PCM_24BIT,
+                96000, AudioQualityModels.ENCODING_PCM_24BIT_PACKED, 2, 96000, 48000,
+                true, 96000, AudioQualityModels.ENCODING_PCM_24BIT_PACKED, true, false, false, true,
+                false, false, false, Collections.emptyList(), AudioQualityModels.UsbDirectState.NONE,
+                false);
+        AudioQualityModels.ResolvedSignalPath resActive = AudioQualityModels.resolve(src, osActiveBp, hwUsb);
+        assertEquals(AudioQualityModels.PipelineMode.BIT_PERFECT, resActive.pipelineMode);
+        assertEquals(AudioQualityModels.OutputPathId.USB_BIT_PERFECT, resActive.outputPaths.get(0).id);
+        assertEquals(AudioQualityModels.PathAvailability.ACTIVE, resActive.outputPaths.get(0).availability);
+    }
+
+    @Test
     public void usbDescriptorParserHandlesUac2WithClockSelectorAndSkipsDsd() {
         // Synthetic UAC 2.0 descriptor:
         // AC iface 0 (proto 0x20): ClockSource 0x05 (RW), ClockSelector 0x09 -> [0x05],

@@ -29,6 +29,7 @@ import android.provider.Settings;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
@@ -106,10 +107,12 @@ public final class AudioQualityMonitor {
         if (context == null) return;
         Context app = context.getApplicationContext();
         try {
-            AudioQualityBitPerfect.initialize(app);
-            UsbDirectAudioEngine.initialize(app);
+            if (AudioQualityFeatures.usbDacOutput()) {
+                AudioQualityBitPerfect.initialize(app);
+                UsbDirectAudioEngine.initialize(app);
+                ensureGlobalUsbDeviceObserverRegistered(app);
+            }
             ensureBluetoothCodecReceiverRegistered(app);
-            ensureGlobalUsbDeviceObserverRegistered(app);
         } catch (Throwable ignored) {
         }
     }
@@ -181,7 +184,9 @@ public final class AudioQualityMonitor {
         if (current != null && (released == null || current == released)) {
             activeTrackRef = new WeakReference<>(null);
         }
-        AudioQualityBitPerfect.onAudioTrackReleased(released);
+        if (AudioQualityFeatures.usbDacOutput()) {
+            AudioQualityBitPerfect.onAudioTrackReleased(released);
+        }
     }
 
     static int getCurrentSourceBitDepth(int fallbackExoEncoding) {
@@ -407,10 +412,12 @@ public final class AudioQualityMonitor {
     }
 
     private static void startHardwareSubscriptions(Context appContext) {
-        AudioQualityBitPerfect.initialize(appContext);
-        UsbDirectAudioEngine.initialize(appContext);
+        if (AudioQualityFeatures.usbDacOutput()) {
+            AudioQualityBitPerfect.initialize(appContext);
+            UsbDirectAudioEngine.initialize(appContext);
+            ensureGlobalUsbDeviceObserverRegistered(appContext);
+        }
         ensureBluetoothCodecReceiverRegistered(appContext);
-        ensureGlobalUsbDeviceObserverRegistered(appContext);
         try {
             AudioManager am = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
             if (am != null) {
@@ -502,8 +509,11 @@ public final class AudioQualityMonitor {
             String trackTitle,
             String trackSubtitle) {
         Context app = context.getApplicationContext();
-        AudioQualityBitPerfect.initialize(app);
-        UsbDirectAudioEngine.initialize(app);
+        boolean usbDacEnabled = AudioQualityFeatures.usbDacOutput();
+        if (usbDacEnabled) {
+            AudioQualityBitPerfect.initialize(app);
+            UsbDirectAudioEngine.initialize(app);
+        }
         AudioManager am = (AudioManager) app.getSystemService(Context.AUDIO_SERVICE);
 
         // 1. Source info
@@ -600,8 +610,9 @@ public final class AudioQualityMonitor {
         }
 
         // Android 14+ Supported & Active USB Mixer Attributes
-        List<AudioQualityModels.UsbMixerOption> supportedUsbMixers =
-                AudioQualityBitPerfect.querySupportedUsbMixers(am, routedDevice);
+        List<AudioQualityModels.UsbMixerOption> supportedUsbMixers = usbDacEnabled
+                ? AudioQualityBitPerfect.querySupportedUsbMixers(am, routedDevice)
+                : Collections.emptyList();
 
         boolean prefBitPerfect = false;
         int prefSampleRate = 0;
@@ -622,34 +633,37 @@ public final class AudioQualityMonitor {
             }
         }
 
-        boolean bpTrackActive = AudioQualityBitPerfect.isBitPerfectTrackActive(liveTrack);
-        boolean prefTrackActive = AudioQualityBitPerfect.isPreferredMixerTrackActive(liveTrack);
-        boolean usbExclusiveSetting = AudioQualityBitPerfect.isExclusiveUsbEnabled(app);
+        boolean bpTrackActive = usbDacEnabled && AudioQualityBitPerfect.isBitPerfectTrackActive(liveTrack);
+        boolean prefTrackActive = usbDacEnabled && AudioQualityBitPerfect.isPreferredMixerTrackActive(liveTrack);
+        boolean usbExclusiveSetting = usbDacEnabled && AudioQualityBitPerfect.isExclusiveUsbEnabled(app);
 
-        UsbDirectAudioEngine.StatusSnapshot directSnap = UsbDirectAudioEngine.captureStatus(app);
-        AudioQualityModels.UsbDirectState usbDirectState = new AudioQualityModels.UsbDirectState(
-                directSnap.nativeLoaded,
-                directSnap.deviceAttached,
-                directSnap.permissionGranted,
-                directSnap.settingEnabled,
-                directSnap.streamActive,
-                directSnap.deviceName,
-                directSnap.uacVersion,
-                directSnap.sampleRateHz,
-                directSnap.bitDepth,
-                directSnap.subslotBytes,
-                directSnap.measuredRateHz,
-                directSnap.maxBitDepth,
-                directSnap.maxSampleRateHz,
-                directSnap.errorReason,
-                directSnap.errorRateHz,
-                directSnap.hwVolumeSupported,
-                directSnap.hwVolumeMuted,
-                directSnap.hwVolumeDb256,
-                directSnap.hwVolumeMinDb256,
-                directSnap.hwVolumeMaxDb256,
-                directSnap.hwVolumePercent
-        );
+        AudioQualityModels.UsbDirectState usbDirectState = AudioQualityModels.UsbDirectState.NONE;
+        if (usbDacEnabled) {
+            UsbDirectAudioEngine.StatusSnapshot directSnap = UsbDirectAudioEngine.captureStatus(app);
+            usbDirectState = new AudioQualityModels.UsbDirectState(
+                    directSnap.nativeLoaded,
+                    directSnap.deviceAttached,
+                    directSnap.permissionGranted,
+                    directSnap.settingEnabled,
+                    directSnap.streamActive,
+                    directSnap.deviceName,
+                    directSnap.uacVersion,
+                    directSnap.sampleRateHz,
+                    directSnap.bitDepth,
+                    directSnap.subslotBytes,
+                    directSnap.measuredRateHz,
+                    directSnap.maxBitDepth,
+                    directSnap.maxSampleRateHz,
+                    directSnap.errorReason,
+                    directSnap.errorRateHz,
+                    directSnap.hwVolumeSupported,
+                    directSnap.hwVolumeMuted,
+                    directSnap.hwVolumeDb256,
+                    directSnap.hwVolumeMinDb256,
+                    directSnap.hwVolumeMaxDb256,
+                    directSnap.hwVolumePercent
+            );
+        }
 
         boolean soundCheck = decoderSoundCheckEnabled || readBoolPref("isVolumeNormalizationEnabled", false);
         boolean eqEnabled = readBoolPref("isEQEnabled", false);
@@ -676,7 +690,8 @@ public final class AudioQualityMonitor {
                 bpTrackActive,
                 prefTrackActive,
                 supportedUsbMixers,
-                usbDirectState
+                usbDirectState,
+                usbDacEnabled
         );
 
         // 3. Hardware output device capabilities
