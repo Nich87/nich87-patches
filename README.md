@@ -49,9 +49,9 @@ https://github.com/user-attachments/assets/85db8424-fd96-4523-a3c8-d5f4a4a7e504
 ## Patches
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.10.0-dev.1](https://github.com/Nich87/nich87-patches/releases/tag/v1.10.0-dev.1)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;10 patches total
+> **[v1.10.0-dev.2](https://github.com/Nich87/nich87-patches/releases/tag/v1.10.0-dev.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`dev`&nbsp;&nbsp;•&nbsp;&nbsp;11 patches total
 <details open>
-<summary>📦 Apple Music&nbsp;&nbsp;•&nbsp;&nbsp;9 patches</summary>
+<summary>📦 Apple Music&nbsp;&nbsp;•&nbsp;&nbsp;10 patches</summary>
 <br>
 
 **Package name:** `com.apple.android.music`
@@ -72,6 +72,7 @@ https://github.com/user-attachments/assets/85db8424-fd96-4523-a3c8-d5f4a4a7e504
 | [On-device pronunciation guides](#on-device-pronunciation-guides) | Generates on-device pronunciation guides for Apple Music, custom, and external lyrics (offline Japanese Kuromoji dictionary and Android ICU) with word-synced karaoke and unsynced lyrics support. |  |
 | [On-device vocal separation](#on-device-vocal-separation) | Adds a vocal and accompaniment mix slider to the lyrics screen. Supports stereo and Dolby Atmos PCM after a one-time model download. |  |
 | [Repair Japanese library metadata](#repair-japanese-library-metadata) | Finds romanized library metadata and repairs selected songs using Japanese catalog data, preserving library entries and syncing changes to the account. |  |
+| [Samsung Modes and Routines support](#samsung-modes-and-routines-support) | Adds Apple Music to Samsung Modes and Routines' Play music action so a routine can resume the current playback queue. |  |
 
 </details>
 

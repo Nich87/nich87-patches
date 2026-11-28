@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-28T12:47:59",
-  "description": "## [1.10.0-dev.1](https://github.com/Nich87/nich87-patches/compare/v1.9.1...v1.10.0-dev.1) (2026-11-28)\n\n### ✨ New Features\n\n* Add Apple Music audio quality signal path ([0d0fe48](https://github.com/Nich87/nich87-patches/commit/0d0fe48e1aa93bfe409490a2ca8967abc46afe64))",
-  "download_url": "https://github.com/Nich87/nich87-patches/releases/download/v1.10.0-dev.1/patches-1.10.0-dev.1.mpp",
+  "created_at": "2026-11-28T14:18:15",
+  "description": "## [1.10.0-dev.2](https://github.com/Nich87/nich87-patches/compare/v1.10.0-dev.1...v1.10.0-dev.2) (2026-11-28)\n\n### ✨ New Features\n\n* Restore Apple Music support for Samsung Modes and Routines ([114f184](https://github.com/Nich87/nich87-patches/commit/114f1844a50fa893043580ea9e872c3de58374cf)), closes [#22](https://github.com/Nich87/nich87-patches/issues/22)",
+  "download_url": "https://github.com/Nich87/nich87-patches/releases/download/v1.10.0-dev.2/patches-1.10.0-dev.2.mpp",
   "signature_download_url": "",
-  "version": "1.10.0-dev.1"
+  "version": "1.10.0-dev.2"
 }

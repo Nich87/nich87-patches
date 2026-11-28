@@ -1,3 +1,9 @@
+## [1.10.0-dev.2](https://github.com/Nich87/nich87-patches/compare/v1.10.0-dev.1...v1.10.0-dev.2) (2026-11-28)
+
+### ✨ New Features
+
+* Restore Apple Music support for Samsung Modes and Routines ([114f184](https://github.com/Nich87/nich87-patches/commit/114f1844a50fa893043580ea9e872c3de58374cf)), closes [#22](https://github.com/Nich87/nich87-patches/issues/22)
+
 ## [1.10.0-dev.1](https://github.com/Nich87/nich87-patches/compare/v1.9.1...v1.10.0-dev.1) (2026-11-28)
 
 ### ✨ New Features
