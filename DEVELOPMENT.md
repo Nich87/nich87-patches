@@ -3,8 +3,9 @@
 ## Prerequisites
 
 - JDK 21 for Gradle, matching the upstream release workflow.
-- Android SDK Platform 36 and Android SDK Build Tools 36.0.0. The Morphe
-  extension plugin currently selects `compileSdk = 36`.
+- Android SDK Platform 36, Android SDK Build Tools 36.0.0, and an Android NDK
+  installation (for compiling `libvoidhack_usb_audio.so`). The Morphe extension
+  plugin currently selects `compileSdk = 36`.
 - Git, GitHub CLI, and a GitHub account with access to GitHub Packages.
 - Optional: Android Studio or IntelliJ IDEA with Kotlin support, jadx,
   apktool, and ADB for work on actual applications.
@@ -77,6 +78,39 @@ merged from an arm64 split set. Merge APKM or XAPK splits before applying the
 patches. Each patch can be selected independently.
 Android 13+ provides live refraction. Older versions retain the native blur;
 that fallback has not been verified on a device.
+
+### Audio quality signal path
+
+`Audio quality signal path` replaces Apple Music's plain audio-quality alert on
+the Now Playing screen (when tapping the Lossless or Hi-Res Lossless badge, and
+makes the Dolby Atmos badge tappable as well) with a dark bottom sheet.
+**Current Output** identifies the active route, including the distinction
+between direct PCM and bit-perfect output. **Output Options** lists the
+available routes and USB controls. The signal path shows:
+
+- **Source**: track quality tier (Hi-Res Lossless, Lossless, Dolby Atmos, Dolby
+  Audio, High Quality / High Efficiency AAC), codec (`ALAC`, `E-AC-3 JOC`,
+  `AAC`, etc.), bit depth, sample rate, channel layout, bitrate, and catalog
+  Hi-Res availability.
+- **Playback device**: device name, live `AudioTrack` / `DefaultAudioSink`
+  output format, Android AudioFlinger native HAL sample rate, Android 13+ direct
+  playback / Android 14+ `AudioMixerAttributes` (Bit-Perfect / Direct / Mixer /
+  Bitstream Passthrough), and Sound Check / EQ status.
+- **Connected output device & output paths**: dynamically identified routed
+  hardware (USB DAC / USB Audio, Bluetooth A2DP / LE Audio, 3.5mm wired
+  headphones / line out, HDMI / ARC / eARC, Optical S/PDIF, built-in speaker,
+  or remote Cast) with device product name, effective output format, supported
+  capabilities, live hot-plug updates, optional Bluetooth A2DP codec detection
+  (`ACTION_CODEC_CONFIG_CHANGED` with `BLUETOOTH_CONNECT`).
+
+**USB Bit-Perfect (Android)** uses `MIXER_BEHAVIOR_BIT_PERFECT` when the Android
+USB HAL supports it. **USB Direct** is opt-in and experimental. Its userspace
+UAC 1.0 / UAC 2.0 driver (`libvoidhack_usb_audio.so`, adapted from the
+MIT-licensed `decent-usb-audio-driver` in `Ma145/decent-player`) sends music
+PCM directly to the DAC. When the DAC exposes UAC hardware volume, its gain
+follows Android's media volume and can be adjusted in the sheet.
+USB Direct playback and reconnection were verified on Apple Music 7.0.3 with
+a UAC 1.0 DAC. UAC 2.0 clock validation is covered by host tests.
 
 ### LRCLIB lyrics
 

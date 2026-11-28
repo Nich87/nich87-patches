@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="voidhack_aq_header">オーディオ品質</string>
+    <string name="voidhack_aq_close">閉じる</string>
+    <string name="voidhack_aq_info">音質の詳細</string>
+    <string name="voidhack_aq_open_settings">オーディオ品質の設定</string>
+    <string name="voidhack_aq_current_output">現在の出力</string>
+    <string name="voidhack_aq_output_options">出力オプション</string>
+    <string name="voidhack_aq_options_expanded">展開中</string>
+    <string name="voidhack_aq_options_collapsed">折りたたみ中</string>
+    <string name="voidhack_aq_summary_bit_perfect">ビットパーフェクト</string>
+    <string name="voidhack_aq_summary_bit_perfect_usb">USB 直接出力で、音源の PCM をそのまま DAC へ送ります。</string>
+    <string name="voidhack_aq_summary_bit_perfect_android">Android の USB 排他モードで、音源の PCM をそのまま DAC へ送ります。</string>
+    <string name="voidhack_aq_summary_usb_direct">Android のミキサーを通さず、USB DAC へ直接出力します。</string>
+    <string name="voidhack_aq_summary_usb_exclusive">USB 排他出力</string>
+    <string name="voidhack_aq_summary_usb_exclusive_desc">Android の USB 排他モードで DAC へ出力します。</string>
+    <string name="voidhack_aq_summary_usb_mixer">音源のサンプルレートを優先し、Android のミキサー経由で出力します。</string>
+    <string name="voidhack_aq_summary_direct_title">ダイレクト出力</string>
+    <string name="voidhack_aq_summary_direct_desc">PCM を直接出力します。音量・音声処理が加わる場合があります。</string>
+    <string name="voidhack_aq_summary_passthrough">Dolby の信号を接続先に送り、機器側でデコードします。</string>
+    <string name="voidhack_aq_summary_bluetooth">Bluetooth のコーデックで接続先へ送ります。</string>
+    <string name="voidhack_aq_summary_cast">接続先の機器で再生しています。</string>
+    <string name="voidhack_aq_summary_mixer">Android のミキサーが音量やサンプルレートを調整します。</string>
+
+    <string name="voidhack_aq_tier_hires">ハイレゾロスレス</string>
+    <string name="voidhack_aq_tier_lossless">ロスレス</string>
+    <string name="voidhack_aq_tier_atmos">ドルビーアトモス</string>
+    <string name="voidhack_aq_tier_dolby_audio">ドルビーオーディオ</string>
+    <string name="voidhack_aq_tier_hq">高音質</string>
+    <string name="voidhack_aq_tier_he">高効率</string>
+    <string name="voidhack_aq_tier_unknown">オーディオ</string>
+
+    <string name="voidhack_aq_desc_hires">Apple Lossless（ALAC）により、最大24ビット/192 kHzのスタジオ録音レベルの音質と細部を再現します。</string>
+    <string name="voidhack_aq_desc_lossless">Apple Lossless（ALAC）により、最大24ビット/48 kHzで元の録音情報をそのまま保持します。</string>
+    <string name="voidhack_aq_desc_atmos">ドルビーアトモスによる空間オーディオで、頭上を含むあらゆる方向から立体的にサウンドが広がります。</string>
+    <string name="voidhack_aq_desc_dolby_audio">ドルビーオーディオによる臨場感あふれるマルチチャンネルサラウンド再生です。</string>
+    <string name="voidhack_aq_desc_hq">標準の高音質ステレオ再生（AAC 256 kbps）です。</string>
+    <string name="voidhack_aq_desc_he">通信量を抑えた高効率ステレオ再生（HE-AAC）です。</string>
+    <string name="voidhack_aq_desc_unknown">現在再生中の音源から出力デバイスまでのオーディオ信号経路を表示します。</string>
+
+    <string name="voidhack_aq_stage_source">音源</string>
+    <string name="voidhack_aq_stage_device">再生デバイス</string>
+    <string name="voidhack_aq_stage_output">接続先デバイス</string>
+
+    <string name="voidhack_aq_hires_available">ハイレゾロスレス対応</string>
+    <string name="voidhack_aq_bit_format">%1$dビット / %2$s</string>
+    <string name="voidhack_aq_stereo">ステレオ</string>
+    <string name="voidhack_aq_mono">モノラル</string>
+    <string name="voidhack_aq_spatial_channels">空間オーディオ</string>
+    <string name="voidhack_aq_surround_channels">%1$dch</string>
+
+
+    <string name="voidhack_aq_connector_resampled">リサンプリング %1$s → %2$s</string>
+
+    <string name="voidhack_aq_out_type_usb">USB</string>
+    <string name="voidhack_aq_out_type_bluetooth">Bluetooth</string>
+    <string name="voidhack_aq_out_type_ble">Bluetooth LE</string>
+    <string name="voidhack_aq_out_type_wired">3.5mm</string>
+    <string name="voidhack_aq_out_type_hdmi">HDMI</string>
+    <string name="voidhack_aq_out_type_hdmi_arc">HDMI ARC</string>
+    <string name="voidhack_aq_out_type_hdmi_earc">HDMI eARC</string>
+    <string name="voidhack_aq_out_type_optical">光デジタル</string>
+    <string name="voidhack_aq_out_type_speaker">スピーカー</string>
+    <string name="voidhack_aq_out_type_cast">Cast</string>
+    <string name="voidhack_aq_out_type_other">オーディオ出力</string>
+
+    <string name="voidhack_aq_out_name_usb">USB オーディオデバイス</string>
+    <string name="voidhack_aq_out_name_bluetooth">Bluetooth デバイス</string>
+    <string name="voidhack_aq_out_name_wired">有線ヘッドホン</string>
+    <string name="voidhack_aq_out_name_line">アナログライン出力</string>
+    <string name="voidhack_aq_out_name_hdmi">HDMI オーディオ</string>
+    <string name="voidhack_aq_out_name_optical">光デジタル出力</string>
+    <string name="voidhack_aq_out_name_speaker">内蔵スピーカー</string>
+    <string name="voidhack_aq_out_name_earpiece">受話スピーカー</string>
+    <string name="voidhack_aq_out_name_cast">キャストデバイス</string>
+    <string name="voidhack_aq_out_name_other">出力デバイス</string>
+
+    <string name="voidhack_aq_device_detail_usb_direct">UAC %1$d.0 直接出力 · %2$s（OS・HAL バイパス）</string>
+    <string name="voidhack_aq_device_detail_usb_direct_fb">UAC %1$d.0 · %2$s · 非同期クロック %3$d Hz</string>
+    <string name="voidhack_aq_device_detail_track">AudioTrack %1$s</string>
+    <string name="voidhack_aq_device_detail_mixer">AudioTrack %1$s → %2$s ミキサー</string>
+    <string name="voidhack_aq_device_detail_soundcheck">音量を自動調整オン</string>
+    <string name="voidhack_aq_device_detail_eq">イコライザ有効</string>
+
+    <string name="voidhack_aq_cap_max">最大 %1$s 対応</string>
+    <string name="voidhack_aq_cap_max_bits">最大 %1$dビット / %2$s 対応</string>
+    <string name="voidhack_aq_cap_atmos_hw">ドルビーアトモス対応</string>
+    <string name="voidhack_aq_cap_bt_a2dp">Bluetooth A2DP</string>
+    <string name="voidhack_aq_cap_bt_le">LE Audio（LC3）</string>
+
+    <string name="voidhack_aq_paths_header">出力経路</string>
+    <string name="voidhack_aq_path_usb_direct">USB 直接出力</string>
+    <string name="voidhack_aq_path_usb_bit_perfect">USB ビットパーフェクト（Android）</string>
+    <string name="voidhack_aq_path_usb_preferred">USB ミキサー（音源レート優先）</string>
+    <string name="voidhack_aq_path_direct_pcm">ダイレクト PCM</string>
+    <string name="voidhack_aq_path_dolby_passthrough">Dolby パススルー</string>
+    <string name="voidhack_aq_path_android_mixer">Android 標準ミキサー</string>
+    <string name="voidhack_aq_path_bluetooth_a2dp">Bluetooth A2DP</string>
+    <string name="voidhack_aq_path_bluetooth_le">Bluetooth LE Audio</string>
+    <string name="voidhack_aq_path_cast">ワイヤレス Cast</string>
+
+    <string name="voidhack_aq_path_state_active">使用中</string>
+    <string name="voidhack_aq_path_state_available">利用可能</string>
+    <string name="voidhack_aq_path_state_permission">要許可</string>
+    <string name="voidhack_aq_path_state_standby">待機</string>
+    <string name="voidhack_aq_path_state_unavailable">非対応</string>
+    <string name="voidhack_aq_path_state_no_usb">USB 未接続</string>
+
+    <string name="voidhack_aq_path_sub_usb_direct_active">UAC %1$d.0 · %2$dビット / %3$s（OS・HAL 完全バイパス）</string>
+    <string name="voidhack_aq_path_sub_usb_direct_ready">独自 UAC1/UAC2 ドライバ（HAL 未公開でも排他出力可能）</string>
+    <string name="voidhack_aq_path_sub_usb_direct_perm">USB アクセスを許可すると HAL 非依存で排他出力</string>
+    <string name="voidhack_aq_path_sub_usb_direct_no_usb">USB DAC 接続時に利用可能（HAL 非依存）</string>
+    <string name="voidhack_aq_path_sub_usb_direct_rate_fallback">DAC が %1$s 非対応のため標準経路へフォールバック</string>
+    <string name="voidhack_aq_path_sub_usb_direct_ch_fallback">マルチチャンネル音源のため標準経路へフォールバック</string>
+    <string name="voidhack_aq_path_sub_usb_direct_open_failed">USB DAC の占有に失敗したため標準経路へフォールバック</string>
+    <string name="voidhack_aq_path_sub_need_android14">Android 14 以降が必要</string>
+    <string name="voidhack_aq_path_sub_usb_required">USB DAC 接続時に利用可能</string>
+    <string name="voidhack_aq_path_sub_bp_active">%1$s · %2$s（OS ミキサー・音量バイパス）</string>
+    <string name="voidhack_aq_path_sub_bp_ready">Android 14+ USB HAL 対応</string>
+    <string name="voidhack_aq_path_sub_bp_hal_unsupported">この端末の USB HAL は Bit-Perfect 未公開</string>
+    <string name="voidhack_aq_path_sub_pref_ready">高解像度 USB ミキサー属性に対応</string>
+    <string name="voidhack_aq_path_sub_direct_active">AudioTrack %1$s · %2$s（HAL ダイレクト対応）</string>
+    <string name="voidhack_aq_path_sub_direct_available">端末のオーディオ HAL が対応</string>
+    <string name="voidhack_aq_path_sub_direct_unavailable">この形式は標準ミキサー経由</string>
+    <string name="voidhack_aq_path_sub_passthrough_active">%1$s ビットストリーム転送</string>
+    <string name="voidhack_aq_path_sub_mixer_rate">共有 AudioFlinger ミキサー（%1$s）</string>
+    <string name="voidhack_aq_path_sub_mixer_generic">共有 AudioFlinger ミキサー</string>
+    <string name="voidhack_aq_path_sub_bt_wait_reconnect">再接続または切替時にコーデック名を取得</string>
+
+    <string name="voidhack_aq_usb_direct_toggle_title">USB 直接出力</string>
+    <string name="voidhack_aq_usb_direct_toggle_desc">Android のミキサーを通さず、DAC に直接送ります。</string>
+    <string name="voidhack_aq_usb_direct_toggle_perm_desc">オンにすると DAC へのアクセス許可を求めます。</string>
+    <string name="voidhack_aq_hw_vol_title">DAC ハードウェア音量</string>
+    <string name="voidhack_aq_hw_vol_muted">ミュート</string>
+    <string name="voidhack_aq_hw_vol_unsupported">この USB DAC は USB 音量制御に非対応です（DAC 本体の音量で調整してください）</string>
+    <string name="voidhack_aq_usb_bp_toggle_title">USB ビットパーフェクト（Android）</string>
+    <string name="voidhack_aq_usb_bp_toggle_desc">Android の排他モードを使います。音量は DAC 側で調整してください。</string>
+    <string name="voidhack_aq_usb_bp_soundcheck_hint">原音そのままにするには「音量を自動調整」をオフにしてください。</string>
+    <string name="voidhack_aq_usb_pref_toggle_title">USB 音源レート優先</string>
+    <string name="voidhack_aq_usb_pref_toggle_desc">ミキサーを使い、音源のサンプルレートを優先します。</string>
+
+    <string name="voidhack_aq_bt_perm_title">Bluetooth コーデックを検出</string>
+    <string name="voidhack_aq_bt_perm_desc">「付近のデバイス」権限を許可すると、接続や切替時の LDAC / AAC などのコーデックを表示します。</string>
+    <string name="voidhack_aq_bt_perm_allow">許可</string>
+
+    <string name="voidhack_aq_info_title">この信号経路について</string>
+    <string name="voidhack_aq_info_usb_direct">独自 USB 直接ドライバ（UAC %1$d.0）が動作しています。デコードされた整数 PCM を Linux usbdevfs アイソクロナス転送で USB DAC へ直接送出し、AudioTrack・AudioFlinger・音量を自動調整・端末 USB HAL をすべてバイパスしています。音量変更時は PCM データを一切加工せず、DAC 側の UAC ハードウェア音量レジスタを直接制御します。</string>
+    <string name="voidhack_aq_info_bit_perfect">Android 14+ の USB 排他ビットパーフェクト（MIXER_BEHAVIOR_BIT_PERFECT）で再生しています。OS のミキサー、リサンプリング、ソフトウェア音量処理をバイパスし、整数 PCM をそのまま USB DAC へ送出しています。</string>
+    <string name="voidhack_aq_info_resampled">Android の標準オーディオミキサーは出力を %1$s にリサンプリングします。48 kHz を超えるハイレゾロスレスをネイティブ解像度で再生するには、ハイレゾ／ビットパーフェクト出力に対応した外付け USB DAC が必要です。</string>
+    <string name="voidhack_aq_info_bluetooth">Bluetooth A2DP では、デコードされた PCM 音声が LDAC・aptX・AAC・SBC などのコーデックで送信されます。LDAC（最大 990 kbps）でもハイレゾ ALAC 音源からは非可逆圧縮となります。</string>
+    <string name="voidhack_aq_info_bluetooth_pending">Bluetooth A2DP では、デコードされた PCM 音声が LDAC・aptX・AAC・SBC などのコーデックで送信されます。Android は一般アプリからの直接取得（getCodecStatus）を制限しているため、Apple Music 起動中にヘッドホンを再接続するかサンプルレート／コーデックが切り替わると自動でコーデック名が表示されます。</string>
+    <string name="voidhack_aq_info_lossless">現在の再生経路では、音源のサンプルレートと解像度を損なわずに接続先デバイスへ出力しています。</string>
+    <string name="voidhack_aq_info_atmos">ドルビーアトモス（E-AC-3 JOC）は立体的な空間オーディオ情報を含みます。端末のデコーダーまたは HDMI パススルーによって立体音響が再現されます。</string>
+    <string name="voidhack_aq_info_general">Apple Music の再生エンジン、Android の AudioTrack／ミキサー処理、および現在接続中の出力ハードウェアの状態をリアルタイムに表示しています。</string>
+</resources>
