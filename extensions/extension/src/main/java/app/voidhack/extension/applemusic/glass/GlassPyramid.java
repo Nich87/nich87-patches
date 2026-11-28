@@ -1,4 +1,4 @@
-package app.voidhack.extension.applemusic;
+package app.voidhack.extension.applemusic.glass;
 
 import android.graphics.RecordingCanvas;
 import android.graphics.RenderEffect;

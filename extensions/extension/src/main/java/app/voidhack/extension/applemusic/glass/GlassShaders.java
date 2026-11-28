@@ -1,4 +1,4 @@
-package app.voidhack.extension.applemusic;
+package app.voidhack.extension.applemusic.glass;
 
 /** AGSL optical passes derived from recovered iOS QuartzCore glass kernels. */
 final class GlassShaders {

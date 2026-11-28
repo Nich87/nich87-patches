@@ -40,8 +40,8 @@ is insufficient for Android loading.
 Keep package paths, declarations, imports and smali descriptors in sync.
 Use the user-selected base namespace `app.voidhack`, with
 `app.voidhack.patches` for patches and `app.voidhack.extension` for extensions.
-The extension class `app.voidhack.extension.applemusic.LiquidGlass` is referenced
-as `Lapp/voidhack/extension/applemusic/LiquidGlass;` in smali.
+The extension class `app.voidhack.extension.applemusic.glass.LiquidGlass` is referenced
+as `Lapp/voidhack/extension/applemusic/glass/LiquidGlass;` in smali.
 
 Resolve fingerprints against the real target APK. A fingerprint matching a
 different method is a failure even when it compiles. Declare exact versions

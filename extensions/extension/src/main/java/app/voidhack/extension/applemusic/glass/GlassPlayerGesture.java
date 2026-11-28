@@ -1,4 +1,4 @@
-package app.voidhack.extension.applemusic;
+package app.voidhack.extension.applemusic.glass;
 
 /** Recognition and release policy in screen pixels and event time. */
 final class GlassPlayerGesture {

@@ -1,4 +1,4 @@
-package app.voidhack.extension.applemusic;
+package app.voidhack.extension.applemusic.glass;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;

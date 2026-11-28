@@ -1,4 +1,4 @@
-package app.voidhack.extension.applemusic;
+package app.voidhack.extension.applemusic.glass;
 
 /** Geometry and opacity for one frame of the native sheet slide. */
 final class GlassPlayerMorph {

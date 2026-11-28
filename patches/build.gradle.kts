@@ -160,7 +160,7 @@ sourceSets["main"].resources.srcDir(compileUsbAudioNative)
 sourceSets["test"].java.srcDir(project(":extensions:extension").file("src/test/java"))
 tasks.named<JavaCompile>("compileTestJava") {
     options.release.set(11)
-    source(project(":extensions:extension").fileTree("src/main/java/app/voidhack/extension/applemusic") {
+    source(project(":extensions:extension").fileTree("src/main/java/app/voidhack/extension/applemusic/glass") {
         include("GlassSpring.java", "GlassPlayerGesture.java", "GlassPlayerMorph.java")
     })
     source(project(":extensions:extension").fileTree("src/main/java/app/voidhack/extension/applemusic/library") {
